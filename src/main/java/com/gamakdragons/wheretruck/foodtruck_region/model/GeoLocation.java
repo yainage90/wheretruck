@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.ToString;
 
+@AllArgsConstructor
 @Getter
 @ToString
 @Builder

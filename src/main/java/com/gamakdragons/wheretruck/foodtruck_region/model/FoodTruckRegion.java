@@ -1,10 +1,7 @@
 package com.gamakdragons.wheretruck.foodtruck_region.model;
 
-import java.time.LocalTime;
-
 import org.springframework.format.annotation.DateTimeFormat;
 
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
