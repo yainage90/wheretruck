@@ -9,15 +9,9 @@ import com.gamakdragons.wheretruck.foodtruck_region.model.GeoLocation;
 import com.gamakdragons.wheretruck.foodtruck_region.util.ElasticSearchUtil;
 import com.gamakdragons.wheretruck.foodtruck_region.util.SearchRequestFactory;
 
-import org.apache.lucene.spatial3d.geom.GeoDistance;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.common.geo.GeoPoint;
-import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.GeoDistanceQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -59,8 +53,21 @@ public class FoodTruckRegionServiceImpl implements FoodTruckRegionService {
     }
 
     @Override
-    public List<FoodTruckRegion> findByAddress(String city) {
-        return null;
+    public List<FoodTruckRegion> findByAddress(String city, String town) {
+        SearchRequest request = SearchRequestFactory.createAddressSearchRequest(city, town);
+        SearchResponse response;
+        try {
+            response = restClient.search(request, RequestOptions.DEFAULT);
+            log.info("total hits: " + response.getHits().getTotalHits());
+        } catch(IOException e) {
+            log.error("IOException occured.");
+            return null;
+        }
+        
+        List<FoodTruckRegion> regions = ElasticSearchUtil.getFoodTruckRegionFromResponse(response);
+        log.info("total results: " + regions.size());
+
+        return regions;
     }
 
     @Override

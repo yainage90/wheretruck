@@ -7,6 +7,7 @@ import com.gamakdragons.wheretruck.foodtruck_region.model.GeoLocation;
 import com.gamakdragons.wheretruck.foodtruck_region.service.FoodTruckRegionService;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -28,6 +29,12 @@ public class FoodTruckRegionRestController {
     @GetMapping(value = "/geo")
     public List<FoodTruckRegion> getRegionsByDistance(GeoLocation geoLocation, float distance) {
         List<FoodTruckRegion> regions = service.findByLocation(geoLocation, distance);
+        return regions;
+    }
+
+    @GetMapping(value = "/address")
+    public List<FoodTruckRegion> getRegionsByAddress(@Nullable String city, @Nullable String town) {
+        List<FoodTruckRegion> regions = service.findByAddress(city, town);
         return regions;
     }
 }
