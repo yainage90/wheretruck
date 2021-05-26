@@ -16,6 +16,7 @@ public class FoodTruckRegion {
     private String regionName;
     private int regionType;
     private String city;
+    private String town;
     private String roadAddress;
     private String postAddress;
     private GeoLocation geoLocation;
