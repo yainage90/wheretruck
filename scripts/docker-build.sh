@@ -2,5 +2,7 @@ cd ..
 
 ./gradlew clean build
 
-docker build -t yaincoding/wheretruck:$1 .
-docker push yaincoding/wheretruck:$1
+tag="$(date +%Y%m%d%H%M)"
+
+docker build -t yaincoding/wheretruck:$tag .
+docker push yaincoding/wheretruck:$tag
