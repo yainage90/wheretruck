@@ -45,8 +45,8 @@ public class SearchRequestFactory {
         return request;
     }
 
-    public static SearchRequest createAddressSearchRequest(String city, String town) {
-        SearchRequest request = new SearchRequest();
+    public static SearchRequest createAddressSearchRequest(String indexName, String city, String town) {
+        SearchRequest request = new SearchRequest(indexName);
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
 
         

@@ -54,7 +54,7 @@ public class FoodTruckRegionServiceImpl implements FoodTruckRegionService {
 
     @Override
     public List<FoodTruckRegion> findByAddress(String city, String town) {
-        SearchRequest request = SearchRequestFactory.createAddressSearchRequest(city, town);
+        SearchRequest request = SearchRequestFactory.createAddressSearchRequest(FOOD_TRUCK_REGION_INDEX_NAME ,city, town);
         SearchResponse response;
         try {
             response = restClient.search(request, RequestOptions.DEFAULT);
