@@ -5,6 +5,10 @@ import java.io.IOException;
 import javax.annotation.PostConstruct;
 
 import org.apache.http.HttpHost;
+import org.elasticsearch.action.get.GetRequest;
+import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -36,5 +40,13 @@ public class ElasticSearchRestClient {
 
     public SearchResponse search(SearchRequest searchRequest, RequestOptions options) throws IOException {
         return esClient.search(searchRequest, options);
+    }
+
+    public GetResponse get(GetRequest request, RequestOptions options) throws IOException {
+        return esClient.get(request, options);
+    }
+
+    public IndexResponse index(IndexRequest request, RequestOptions options) throws IOException {
+        return esClient.index(request, options);
     }
 }

@@ -5,8 +5,8 @@ import java.io.IOException;
 import com.gamakdragons.wheretruck.client.ElasticSearchRestClient;
 import com.gamakdragons.wheretruck.foodtruck_region.model.GeoLocation;
 import com.gamakdragons.wheretruck.foodtruck_region.model.RegionResponse;
-import com.gamakdragons.wheretruck.foodtruck_region.util.ElasticSearchUtil;
-import com.gamakdragons.wheretruck.foodtruck_region.util.SearchRequestFactory;
+import com.gamakdragons.wheretruck.util.ElasticSearchUtil;
+import com.gamakdragons.wheretruck.util.EsRequestFactory;
 
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
@@ -21,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class FoodTruckRegionServiceImpl implements FoodTruckRegionService {
     
-    @Value("${es.food_truck_region_index_name}")
+    @Value("${es.index.food_truck_region.name}")
     private String FOOD_TRUCK_REGION_INDEX_NAME;
 
     private final ElasticSearchRestClient restClient;
@@ -34,7 +34,7 @@ public class FoodTruckRegionServiceImpl implements FoodTruckRegionService {
     @Override
     public RegionResponse findAll() {
 
-        SearchRequest request = SearchRequestFactory.createMatchAllQuery(FOOD_TRUCK_REGION_INDEX_NAME); 
+        SearchRequest request = EsRequestFactory.createSearchAllRequest(FOOD_TRUCK_REGION_INDEX_NAME); 
 
         SearchResponse searchResponse;
         try {
@@ -45,7 +45,7 @@ public class FoodTruckRegionServiceImpl implements FoodTruckRegionService {
             return null;
         }
 
-        RegionResponse response = ElasticSearchUtil.createResultFromResponse(searchResponse);
+        RegionResponse response = ElasticSearchUtil.createRegionResponseFromSearchResponse(searchResponse);
 
         return response;
     }
@@ -53,7 +53,7 @@ public class FoodTruckRegionServiceImpl implements FoodTruckRegionService {
     @Override
     public RegionResponse findByAddress(String city, String town) {
 
-        SearchRequest request = SearchRequestFactory.createAddressSearchRequest(FOOD_TRUCK_REGION_INDEX_NAME ,city, town);
+        SearchRequest request = EsRequestFactory.createAddressSearchRequest(FOOD_TRUCK_REGION_INDEX_NAME ,city, town);
         SearchResponse searchResponse;
         try {
             searchResponse = restClient.search(request, RequestOptions.DEFAULT);
@@ -63,7 +63,7 @@ public class FoodTruckRegionServiceImpl implements FoodTruckRegionService {
             return null;
         }
         
-        RegionResponse response = ElasticSearchUtil.createResultFromResponse(searchResponse);
+        RegionResponse response = ElasticSearchUtil.createRegionResponseFromSearchResponse(searchResponse);
 
         return response;
     }
@@ -71,7 +71,7 @@ public class FoodTruckRegionServiceImpl implements FoodTruckRegionService {
     @Override
     public RegionResponse findByLocation(GeoLocation geoLocation, float distance) {
 
-        SearchRequest request = SearchRequestFactory.createGeoSearchQuery(FOOD_TRUCK_REGION_INDEX_NAME, geoLocation, distance);
+        SearchRequest request = EsRequestFactory.createGeoSearchRequest(FOOD_TRUCK_REGION_INDEX_NAME, geoLocation, distance);
         SearchResponse searchResponse;
         try {
             searchResponse = restClient.search(request, RequestOptions.DEFAULT);
@@ -81,7 +81,7 @@ public class FoodTruckRegionServiceImpl implements FoodTruckRegionService {
             return null;
         }
 
-        RegionResponse response = ElasticSearchUtil.createResultFromResponse(searchResponse);
+        RegionResponse response = ElasticSearchUtil.createRegionResponseFromSearchResponse(searchResponse);
 
         return response;
     }
