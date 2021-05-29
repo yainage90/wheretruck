@@ -1,9 +1,7 @@
 package com.gamakdragons.wheretruck.foodtruck_region.controller;
 
-import java.util.List;
-
-import com.gamakdragons.wheretruck.foodtruck_region.model.FoodTruckRegion;
 import com.gamakdragons.wheretruck.foodtruck_region.model.GeoLocation;
+import com.gamakdragons.wheretruck.foodtruck_region.model.RegionResponse;
 import com.gamakdragons.wheretruck.foodtruck_region.service.FoodTruckRegionService;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,37 +25,37 @@ public class FoodTruckRegionRestController {
     private FoodTruckRegionService service;
 
     @RequestMapping(value = "/all", method = {RequestMethod.GET, RequestMethod.POST})
-    public List<FoodTruckRegion> getAllRegions() {
+    public RegionResponse getAllRegions() {
         log.info("/region/all");
-        List<FoodTruckRegion> regions = service.findAll();
+        RegionResponse regions = service.findAll();
         return regions;
     }
 
     @GetMapping(value = "/geo")
-    public List<FoodTruckRegion> getRegionsByDistance(GeoLocation geoLocation, float distance) {
+    public RegionResponse getRegionsByDistance(GeoLocation geoLocation, float distance) {
         log.info("/region/geo. geoLocation=" + geoLocation + ", distance=" + distance);
-        List<FoodTruckRegion> regions = service.findByLocation(geoLocation, distance);
+        RegionResponse regions = service.findByLocation(geoLocation, distance);
         return regions;
     }
 
     @PostMapping(value = "/geo")
-    public List<FoodTruckRegion> getRegionsByDistance(@RequestBody GeoRequest request) {
+    public RegionResponse getRegionsByDistance(@RequestBody GeoRequest request) {
         log.info("/region/geo. request=" + request.toString());
-        List<FoodTruckRegion> regions = service.findByLocation(request.getGeoLocation(), request.getDistance());
+        RegionResponse regions = service.findByLocation(request.getGeoLocation(), request.getDistance());
         return regions;
     }
 
     @GetMapping(value = "/address")
-    public List<FoodTruckRegion> getRegionsByAddress(@Nullable String city, @Nullable String town) {
+    public RegionResponse getRegionsByAddress(@Nullable String city, @Nullable String town) {
         log.info("/region/address. city=" + city + ", town=" + town);
-        List<FoodTruckRegion> regions = service.findByAddress(city, town);
+        RegionResponse regions = service.findByAddress(city, town);
         return regions;
     }
 
     @PostMapping(value = "/address")
-    public List<FoodTruckRegion> getRegionsByAddress(@RequestBody AddressRequest request) {
+    public RegionResponse getRegionsByAddress(@RequestBody AddressRequest request) {
         log.info("/region/addresss. request=" + request);
-        List<FoodTruckRegion> regions = service.findByAddress(request.getCity(), request.getTown());
+        RegionResponse regions = service.findByAddress(request.getCity(), request.getTown());
         return regions;
     }
 
