@@ -1,12 +1,15 @@
 package com.gamakdragons.wheretruck.foodtruck_region.service;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 import com.gamakdragons.wheretruck.client.ElasticSearchRestClient;
+import com.gamakdragons.wheretruck.common.SearchResultDto;
+import com.gamakdragons.wheretruck.foodtruck_region.model.FoodTruckRegion;
 import com.gamakdragons.wheretruck.foodtruck_region.model.GeoLocation;
-import com.gamakdragons.wheretruck.foodtruck_region.model.RegionResponse;
-import com.gamakdragons.wheretruck.util.ElasticSearchUtil;
 import com.gamakdragons.wheretruck.util.EsRequestFactory;
+import com.google.gson.Gson;
 
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
@@ -32,7 +35,7 @@ public class FoodTruckRegionServiceImpl implements FoodTruckRegionService {
     }
 
     @Override
-    public RegionResponse findAll() {
+    public SearchResultDto<FoodTruckRegion> findAll() {
 
         SearchRequest request = EsRequestFactory.createSearchAllRequest(FOOD_TRUCK_REGION_INDEX_NAME); 
 
@@ -45,13 +48,17 @@ public class FoodTruckRegionServiceImpl implements FoodTruckRegionService {
             return null;
         }
 
-        RegionResponse response = ElasticSearchUtil.createRegionResponseFromSearchResponse(searchResponse);
-
-        return response;
+        return SearchResultDto.<FoodTruckRegion> builder()
+                .numFound(searchResponse.getHits().getTotalHits().value)
+                .results(
+                    Arrays.stream(searchResponse.getHits().getHits())
+                            .map(hit -> new Gson().fromJson(hit.getSourceAsString(), FoodTruckRegion.class))
+                            .collect(Collectors.toList())
+                ).build();
     }
 
     @Override
-    public RegionResponse findByAddress(String city, String town) {
+    public SearchResultDto<FoodTruckRegion> findByAddress(String city, String town) {
 
         SearchRequest request = EsRequestFactory.createAddressSearchRequest(FOOD_TRUCK_REGION_INDEX_NAME ,city, town);
         SearchResponse searchResponse;
@@ -62,14 +69,18 @@ public class FoodTruckRegionServiceImpl implements FoodTruckRegionService {
             log.error("IOException occured.");
             return null;
         }
-        
-        RegionResponse response = ElasticSearchUtil.createRegionResponseFromSearchResponse(searchResponse);
 
-        return response;
+        return SearchResultDto.<FoodTruckRegion> builder()
+                .numFound(searchResponse.getHits().getTotalHits().value)
+                .results(
+                    Arrays.stream(searchResponse.getHits().getHits())
+                            .map(hit -> new Gson().fromJson(hit.getSourceAsString(), FoodTruckRegion.class))
+                            .collect(Collectors.toList())
+                ).build();
     }
 
     @Override
-    public RegionResponse findByLocation(GeoLocation geoLocation, float distance) {
+    public SearchResultDto<FoodTruckRegion> findByLocation(GeoLocation geoLocation, float distance) {
 
         SearchRequest request = EsRequestFactory.createGeoSearchRequest(FOOD_TRUCK_REGION_INDEX_NAME, geoLocation, distance);
         SearchResponse searchResponse;
@@ -81,9 +92,13 @@ public class FoodTruckRegionServiceImpl implements FoodTruckRegionService {
             return null;
         }
 
-        RegionResponse response = ElasticSearchUtil.createRegionResponseFromSearchResponse(searchResponse);
-
-        return response;
+        return SearchResultDto.<FoodTruckRegion> builder()
+                .numFound(searchResponse.getHits().getTotalHits().value)
+                .results(
+                    Arrays.stream(searchResponse.getHits().getHits())
+                            .map(hit -> new Gson().fromJson(hit.getSourceAsString(), FoodTruckRegion.class))
+                            .collect(Collectors.toList())
+                ).build();
     }
 
 }

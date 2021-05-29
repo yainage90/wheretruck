@@ -1,12 +1,12 @@
 package com.gamakdragons.wheretruck.util;
 
 import com.gamakdragons.wheretruck.foodtruck_region.model.GeoLocation;
-import com.gamakdragons.wheretruck.truck.model.Truck;
 
+import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.common.geo.GeoPoint;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.GeoDistanceQueryBuilder;
@@ -76,14 +76,26 @@ public class EsRequestFactory {
         return request;
     }
 
-    public static GetRequest createGetByIdRequest(String indexName, String id) {
+    public static GetRequest createGetRequest(String indexName, String id) {
         return new GetRequest(indexName, id);
     }
 
-    public static IndexRequest createTruckIndexRequest(String indexName, Truck truck) {
+    public static IndexRequest createIndexRequest(String indexName, Object object) {
         IndexRequest indexRequest = new IndexRequest();
-        indexRequest.source(truck);
+        indexRequest.source(object);
 
         return indexRequest;
+    }
+
+    public static UpdateRequest createUpdateRequest(String index, String id, Object object) {
+        UpdateRequest request = new UpdateRequest(index, id);
+        request.doc(object);
+
+        return request;
+    }
+
+    public static DeleteRequest creatDeleteRequest(String index, String id) {
+        DeleteRequest request = new DeleteRequest(index, id);
+        return request;
     }
 }

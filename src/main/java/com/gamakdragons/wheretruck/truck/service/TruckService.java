@@ -1,18 +1,22 @@
 package com.gamakdragons.wheretruck.truck.service;
 
+import com.gamakdragons.wheretruck.common.DeleteResultDto;
+import com.gamakdragons.wheretruck.common.IndexResultDto;
+import com.gamakdragons.wheretruck.common.SearchResultDto;
+import com.gamakdragons.wheretruck.common.UpdateResultDto;
 import com.gamakdragons.wheretruck.foodtruck_region.model.GeoLocation;
 import com.gamakdragons.wheretruck.truck.model.Truck;
-import com.gamakdragons.wheretruck.truck.model.TruckIndexResponse;
-import com.gamakdragons.wheretruck.truck.model.TruckSearchResponse;
 
 public interface TruckService {
     
-    TruckSearchResponse findAll();
+    SearchResultDto<Truck> findAll();
+    SearchResultDto<Truck> findByLocation(GeoLocation location, float distance);
+
     Truck findById(String id);
-    TruckSearchResponse findByLocation(GeoLocation location, float distance);
     Truck openTruck(String id, GeoLocation location);
     Truck stopTruck(String id);
-    TruckIndexResponse registerTruck(Truck truck);
-    TruckSearchResponse updateTruck(Truck truck);
-    TruckSearchResponse deleteTruck(String id);
+
+    IndexResultDto registerTruck(Truck truck);
+    UpdateResultDto updateTruck(Truck truck);
+    DeleteResultDto deleteTruck(String id);
 }

@@ -1,4 +1,4 @@
-package com.gamakdragons.wheretruck.truck.model;
+package com.gamakdragons.wheretruck.common;
 
 import java.util.List;
 
@@ -7,8 +7,8 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class TruckSearchResponse {
+public class SearchResultDto<T> {
     
     private long numFound;
-    private List<Truck> trucks;
+    private List<T> results;
 }

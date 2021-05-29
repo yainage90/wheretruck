@@ -1,13 +1,12 @@
-package com.gamakdragons.wheretruck.truck.model;
+package com.gamakdragons.wheretruck.common;
 
 import lombok.Builder;
 import lombok.Getter;
-import lombok.Setter;
 
 @Getter
 @Builder
-public class TruckIndexResponse {
-
+public class IndexResultDto {
+    
     private String result;
     private String id;
 }
