@@ -14,6 +14,7 @@ import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.GeoDistanceQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.TermQueryBuilder;
+import org.elasticsearch.index.reindex.DeleteByQueryRequest;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 public class EsRequestFactory {
@@ -102,5 +103,32 @@ public class EsRequestFactory {
         return request;
     }
 
+    public static SearchRequest createTruckIdSearchRequest(String index, String truckId) {
+        
+        SearchRequest request = new SearchRequest(index);
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+
+        TermQueryBuilder termQueryBuilder = new TermQueryBuilder("truckId", truckId);
+
+        searchSourceBuilder.query(termQueryBuilder);
+        searchSourceBuilder.from(0);
+        searchSourceBuilder.size(10000);
+
+        request.source(searchSourceBuilder);
+
+        return request;
+    }
+
+    public static DeleteByQueryRequest createDeleteByTruckId(String[] indices, String truckId) {
+        
+        DeleteByQueryRequest request = new DeleteByQueryRequest(indices);
+
+        TermQueryBuilder termQueryBuilder = new TermQueryBuilder("truckId", truckId);
+        request.setQuery(termQueryBuilder);
+
+        request.setMaxRetries(3);
+
+        return request;
+    }
     
 }
