@@ -6,3 +6,5 @@ es:
       name: permission_region
     truck:
       name: truck
+    food:
+      name: food
