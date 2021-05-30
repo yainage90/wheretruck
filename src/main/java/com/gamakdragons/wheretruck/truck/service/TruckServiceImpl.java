@@ -27,6 +27,8 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.index.reindex.BulkByScrollResponse;
+import org.elasticsearch.index.reindex.DeleteByQueryRequest;
 import org.elasticsearch.rest.RestStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -40,6 +42,12 @@ public class TruckServiceImpl implements TruckService {
 
     @Value("${es.index.truck.name}")
     private String TRUCK_INDEX_NAME;
+
+    @Value("${es.index.food.name}")
+    private String FOOD_INDEX_NAME;
+
+    @Value("${es.index.rating.name}")
+    private String RATING_INDEX_NAME;
 
     private final ElasticSearchRestClient restClient;
 
@@ -113,7 +121,6 @@ public class TruckServiceImpl implements TruckService {
         }
 
         Truck truck = new Gson().fromJson(getResponse.getSourceAsString(), Truck.class);
-        truck.setId(id);
 
         return truck;
     }
@@ -166,6 +173,7 @@ public class TruckServiceImpl implements TruckService {
         DeleteResponse response;
         try {
             response = restClient.delete(request, RequestOptions.DEFAULT);
+            deleteTruckRelatedSources(new String[]{FOOD_INDEX_NAME, RATING_INDEX_NAME}, id);
         } catch(IOException e) {
             log.error("IOException occured.");
             return DeleteResultDto.builder()
@@ -224,5 +232,16 @@ public class TruckServiceImpl implements TruckService {
 
     }
 
+    private void deleteTruckRelatedSources(String[] indices, String truckId) {
+
+        DeleteByQueryRequest request = EsRequestFactory.createDeleteByTruckId(indices, truckId);
+        BulkByScrollResponse response;
+        try {
+            response = restClient.deleteByQuery(request, RequestOptions.DEFAULT);
+            log.info(response.getStatus().toString());
+        } catch(IOException e) {
+            log.error("IOException occured.");
+        }
+    }
 
 }
