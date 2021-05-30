@@ -1,4 +1,10 @@
 es:
   host: ec2-13-209-181-246.ap-northeast-2.compute.amazonaws.com
   port: 9200
-  food_truck_region_index_name: permission_region
+  index:
+    food_truck_region:
+      name: permission_region
+    truck:
+      name: truck
+    food:
+      name: food

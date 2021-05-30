@@ -1,18 +1,25 @@
-package com.gamakdragons.wheretruck.foodtruck_region.util;
+package com.gamakdragons.wheretruck.util;
 
 import com.gamakdragons.wheretruck.foodtruck_region.model.GeoLocation;
+import com.google.gson.Gson;
 
+import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.get.GetRequest;
+import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.common.geo.GeoPoint;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.GeoDistanceQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.TermQueryBuilder;
+import org.elasticsearch.index.reindex.DeleteByQueryRequest;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
-public class SearchRequestFactory {
+public class EsRequestFactory {
     
-    public static SearchRequest createMatchAllQuery(String indexName) {
+    public static SearchRequest createSearchAllRequest(String indexName) {
         SearchRequest request = new SearchRequest(indexName);
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
         searchSourceBuilder.query(QueryBuilders.matchAllQuery());
@@ -23,7 +30,7 @@ public class SearchRequestFactory {
         return request;
     }
 
-    public static SearchRequest createGeoSearchQuery(String indexName, GeoLocation geoLocation, float distance) {
+    public static SearchRequest createGeoSearchRequest(String indexName, GeoLocation geoLocation, float distance) {
 
         SearchRequest request = new SearchRequest(indexName);
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
@@ -46,9 +53,9 @@ public class SearchRequestFactory {
     }
 
     public static SearchRequest createAddressSearchRequest(String indexName, String city, String town) {
+
         SearchRequest request = new SearchRequest(indexName);
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-
         
         BoolQueryBuilder queryBuilder = new BoolQueryBuilder();
         
@@ -70,6 +77,58 @@ public class SearchRequestFactory {
         request.source(searchSourceBuilder);
 
         return request;
-
     }
+
+    public static GetRequest createGetRequest(String indexName, String id) {
+        return new GetRequest(indexName, id);
+    }
+
+    public static IndexRequest createIndexRequest(String indexName, String id, Object object) {
+        IndexRequest indexRequest = new IndexRequest(indexName);
+        indexRequest.id(id);
+        indexRequest.source(new Gson().toJson(object), XContentType.JSON);
+
+        return indexRequest;
+    }
+
+    public static UpdateRequest createUpdateRequest(String index, String id, Object object) {
+        UpdateRequest request = new UpdateRequest(index, id);
+        request.doc(new Gson().toJson(object), XContentType.JSON);
+
+        return request;
+    }
+
+    public static DeleteRequest creatDeleteRequest(String index, String id) {
+        DeleteRequest request = new DeleteRequest(index, id);
+        return request;
+    }
+
+    public static SearchRequest createTruckIdSearchRequest(String index, String truckId) {
+        
+        SearchRequest request = new SearchRequest(index);
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+
+        TermQueryBuilder termQueryBuilder = new TermQueryBuilder("truckId", truckId);
+
+        searchSourceBuilder.query(termQueryBuilder);
+        searchSourceBuilder.from(0);
+        searchSourceBuilder.size(10000);
+
+        request.source(searchSourceBuilder);
+
+        return request;
+    }
+
+    public static DeleteByQueryRequest createDeleteByTruckId(String[] indices, String truckId) {
+        
+        DeleteByQueryRequest request = new DeleteByQueryRequest(indices);
+
+        TermQueryBuilder termQueryBuilder = new TermQueryBuilder("truckId", truckId);
+        request.setQuery(termQueryBuilder);
+
+        request.setMaxRetries(3);
+
+        return request;
+    }
+    
 }
