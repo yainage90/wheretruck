@@ -2,6 +2,8 @@ package com.gamakdragons.wheretruck.truck.service;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import com.gamakdragons.wheretruck.client.ElasticSearchRestClient;
@@ -11,7 +13,6 @@ import com.gamakdragons.wheretruck.common.SearchResultDto;
 import com.gamakdragons.wheretruck.common.UpdateResultDto;
 import com.gamakdragons.wheretruck.foodtruck_region.model.GeoLocation;
 import com.gamakdragons.wheretruck.truck.model.Truck;
-import com.gamakdragons.wheretruck.truck.model.TruckIndexRequestDto;
 import com.gamakdragons.wheretruck.util.EsRequestFactory;
 import com.google.gson.Gson;
 
@@ -26,6 +27,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.rest.RestStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -50,27 +52,57 @@ public class TruckServiceImpl implements TruckService {
     public SearchResultDto<Truck> findAll() {
         SearchRequest request = EsRequestFactory.createSearchAllRequest(TRUCK_INDEX_NAME); 
 
-        SearchResponse searchResponse;
+        SearchResponse response;
         try {
-            searchResponse = restClient.search(request, RequestOptions.DEFAULT);
-            log.info("total hits: " + searchResponse.getHits().getTotalHits());
+            response = restClient.search(request, RequestOptions.DEFAULT);
+            log.info("total hits: " + response.getHits().getTotalHits());
         } catch(IOException e) {
             log.error("IOException occured.");
-            return null;
+            return makeErrorSearhResultDtoFromSearchResponse();
         }
 
+        return makeSearhResultDtoFromSearchResponse(response);
+    }
+
+    
+    @Override
+    public SearchResultDto<Truck> findByLocation(GeoLocation location, float distance) {
+
+        SearchRequest request = EsRequestFactory.createGeoSearchRequest(TRUCK_INDEX_NAME, location, distance);
+        SearchResponse response;
+        try {
+            response = restClient.search(request, RequestOptions.DEFAULT);
+            log.info("total hits: " + response.getHits().getTotalHits());
+        } catch(IOException e) {
+            log.error("IOException occured.");
+            return makeErrorSearhResultDtoFromSearchResponse();
+        }
+
+        return makeSearhResultDtoFromSearchResponse(response);
+    }
+
+    private SearchResultDto<Truck> makeSearhResultDtoFromSearchResponse(SearchResponse response) {
         return SearchResultDto.<Truck> builder()
-                .numFound(searchResponse.getHits().getTotalHits().value)
-                .results(
-                    Arrays.stream(searchResponse.getHits().getHits())
+                .status(response.status().name())
+                .numFound(response.getHits().getTotalHits().value)
+                .docs(
+                    Arrays.stream(response.getHits().getHits())
                             .map(hit -> new Gson().fromJson(hit.getSourceAsString(), Truck.class))
                             .collect(Collectors.toList())
                 ).build();
+    }
+
+    private SearchResultDto<Truck> makeErrorSearhResultDtoFromSearchResponse() {
+        return SearchResultDto.<Truck> builder()
+                .status(RestStatus.INTERNAL_SERVER_ERROR.name())
+                .numFound(0)
+                .docs(Collections.emptyList())
+                .build();
 
     }
 
     @Override
-    public Truck findById(String id) {
+    public Truck getById(String id) {
         GetRequest request = EsRequestFactory.createGetRequest(TRUCK_INDEX_NAME, id);
         GetResponse getResponse;
         try {
@@ -80,55 +112,51 @@ public class TruckServiceImpl implements TruckService {
             return null;
         }
 
-        return new Gson().fromJson(getResponse.getSourceAsString(), Truck.class);
+        Truck truck = new Gson().fromJson(getResponse.getSourceAsString(), Truck.class);
+        truck.setId(id);
+
+        return truck;
     }
 
     @Override
-    public SearchResultDto<Truck> findByLocation(GeoLocation location, float distance) {
+    public IndexResultDto saveTruck(Truck truck) {
 
-        SearchRequest request = EsRequestFactory.createGeoSearchRequest(TRUCK_INDEX_NAME, location, distance);
-        SearchResponse searchResponse;
+        String id = UUID.randomUUID().toString();
+        truck.setId(id);
+
+        IndexRequest request = EsRequestFactory.createIndexRequest(TRUCK_INDEX_NAME, id, truck);
+        IndexResponse response;
         try {
-            searchResponse = restClient.search(request, RequestOptions.DEFAULT);
-            log.info("total hits: " + searchResponse.getHits().getTotalHits());
+            response = restClient.index(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error("IOException occured.");
-            return null;
-        }
+            return IndexResultDto.builder()
+                .result(e.getLocalizedMessage())
+                .build();
 
-        return null;
-    }
-
-    @Override
-    public IndexResultDto registerTruck(TruckIndexRequestDto truckIndexRequestDto) {
-        IndexRequest request = EsRequestFactory.createIndexRequest(TRUCK_INDEX_NAME, truckIndexRequestDto);
-        IndexResponse indexResponse;
-        try {
-            indexResponse = restClient.index(request, RequestOptions.DEFAULT);
-        } catch(IOException e) {
-            log.error("IOException occured.");
-            return null;
         }
 
         return IndexResultDto.builder()
-                .result(indexResponse.getResult().name())
-                .id(indexResponse.getId())
+                .result(response.getResult().name())
+                .id(id)
                 .build();
     }
 
     @Override
     public UpdateResultDto updateTruck(Truck truck) {
         UpdateRequest request = EsRequestFactory.createUpdateRequest(TRUCK_INDEX_NAME, truck.getId(), truck);
-        UpdateResponse updateResponse;
+        UpdateResponse response;
         try {
-            updateResponse = restClient.update(request, RequestOptions.DEFAULT);
+            response = restClient.update(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error("IOException occured.");
-            return null;
+            return UpdateResultDto.builder()
+                .result(e.getLocalizedMessage())
+                .build();
         }
 
         return UpdateResultDto.builder()
-                .result(updateResponse.getResult().name())
+                .result(response.getResult().name())
                 .build();
     }
     
@@ -140,7 +168,9 @@ public class TruckServiceImpl implements TruckService {
             response = restClient.delete(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error("IOException occured.");
-            return null;
+            return DeleteResultDto.builder()
+                    .result(e.getLocalizedMessage())
+                    .build();
         }
 
         return DeleteResultDto.builder()
@@ -150,13 +180,48 @@ public class TruckServiceImpl implements TruckService {
 
  
     @Override
-    public Truck openTruck(String id, GeoLocation location) {
-        return null;
+    public UpdateResultDto openTruck(String id, GeoLocation location) {
+        Truck truck = getById(id);
+        truck.setOpened(true);
+        truck.setGeoLocation(location);
+
+        UpdateRequest request = EsRequestFactory.createUpdateRequest(TRUCK_INDEX_NAME, id, truck);
+        UpdateResponse response;
+        try {
+            response = restClient.update(request, RequestOptions.DEFAULT);
+        } catch(IOException e) {
+            log.error("IOException occured.");
+            return UpdateResultDto.builder()
+                    .result(e.getLocalizedMessage())
+                    .build();
+        }
+
+        return UpdateResultDto.builder()
+                .result(response.getResult().name())
+                .build();
     }
 
     @Override
-    public Truck stopTruck(String id) {
-        return null;
+    public UpdateResultDto stopTruck(String id) {
+        Truck truck = getById(id);
+        truck.setOpened(false);
+
+        UpdateRequest request = EsRequestFactory.createUpdateRequest(TRUCK_INDEX_NAME, id, truck);
+        UpdateResponse response;
+        try {
+            response = restClient.update(request, RequestOptions.DEFAULT);
+        } catch(IOException e) {
+            log.error("IOException occured.");
+            return UpdateResultDto.builder()
+                    .result(e.getLocalizedMessage())
+                    .build();
+
+        }
+
+        return UpdateResultDto.builder()
+                .result(response.getResult().name())
+                .build();
+
     }
 
 

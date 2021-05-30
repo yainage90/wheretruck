@@ -1,4 +1,4 @@
-package com.gamakdragons.wheretruck.foodtruck_region.controller;
+package com.gamakdragons.wheretruck.truck.controller;
 
 import com.gamakdragons.wheretruck.foodtruck_region.model.GeoLocation;
 
@@ -9,8 +9,8 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-public class GeoRequest {
-
+public class TruckStartRequest {
+    
+    private String id;
     private GeoLocation geoLocation;
-    private int distance;
 }

@@ -2,6 +2,7 @@ package com.gamakdragons.wheretruck.truck.model;
 
 import com.gamakdragons.wheretruck.foodtruck_region.model.GeoLocation;
 
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -9,6 +10,7 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
+@Builder
 public class Truck {
 
     private String id;
@@ -16,14 +18,4 @@ public class Truck {
     private GeoLocation geoLocation;
     private String description;
     private boolean isOpened;
-
-    public TruckIndexRequestDto toIndexRequestDto() {
-
-        return TruckIndexRequestDto.builder()
-                .name(name)
-                .geoLocation(geoLocation)
-                .description(description)
-                .isOpened(isOpened)
-                .build();
-    }
 }

@@ -2,6 +2,7 @@ package com.gamakdragons.wheretruck.foodtruck_region.service;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.stream.Collectors;
 
 import com.gamakdragons.wheretruck.client.ElasticSearchRestClient;
@@ -14,6 +15,7 @@ import com.google.gson.Gson;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.rest.RestStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -39,66 +41,69 @@ public class FoodTruckRegionServiceImpl implements FoodTruckRegionService {
 
         SearchRequest request = EsRequestFactory.createSearchAllRequest(FOOD_TRUCK_REGION_INDEX_NAME); 
 
-        SearchResponse searchResponse;
+        SearchResponse response;
         try {
-            searchResponse = restClient.search(request, RequestOptions.DEFAULT);
-            log.info("total hits: " + searchResponse.getHits().getTotalHits());
+            response = restClient.search(request, RequestOptions.DEFAULT);
+            log.info("total hits: " + response.getHits().getTotalHits());
         } catch(IOException e) {
             log.error("IOException occured.");
-            return null;
+            return makeErrorSearhResultDtoFromSearchResponse();
         }
 
-        return SearchResultDto.<FoodTruckRegion> builder()
-                .numFound(searchResponse.getHits().getTotalHits().value)
-                .results(
-                    Arrays.stream(searchResponse.getHits().getHits())
-                            .map(hit -> new Gson().fromJson(hit.getSourceAsString(), FoodTruckRegion.class))
-                            .collect(Collectors.toList())
-                ).build();
+        return makeSearhResultDtoFromSearchResponse(response);
     }
 
     @Override
     public SearchResultDto<FoodTruckRegion> findByAddress(String city, String town) {
 
         SearchRequest request = EsRequestFactory.createAddressSearchRequest(FOOD_TRUCK_REGION_INDEX_NAME ,city, town);
-        SearchResponse searchResponse;
+        SearchResponse response;
         try {
-            searchResponse = restClient.search(request, RequestOptions.DEFAULT);
-            log.info("total hits: " + searchResponse.getHits().getTotalHits());
+            response = restClient.search(request, RequestOptions.DEFAULT);
+            log.info("total hits: " + response.getHits().getTotalHits());
         } catch(IOException e) {
             log.error("IOException occured.");
-            return null;
+            return makeErrorSearhResultDtoFromSearchResponse();
         }
 
-        return SearchResultDto.<FoodTruckRegion> builder()
-                .numFound(searchResponse.getHits().getTotalHits().value)
-                .results(
-                    Arrays.stream(searchResponse.getHits().getHits())
-                            .map(hit -> new Gson().fromJson(hit.getSourceAsString(), FoodTruckRegion.class))
-                            .collect(Collectors.toList())
-                ).build();
+        return makeSearhResultDtoFromSearchResponse(response);
     }
 
     @Override
     public SearchResultDto<FoodTruckRegion> findByLocation(GeoLocation geoLocation, float distance) {
 
         SearchRequest request = EsRequestFactory.createGeoSearchRequest(FOOD_TRUCK_REGION_INDEX_NAME, geoLocation, distance);
-        SearchResponse searchResponse;
+        SearchResponse response;
         try {
-            searchResponse = restClient.search(request, RequestOptions.DEFAULT);
-            log.info("total hits: " + searchResponse.getHits().getTotalHits());
+            response = restClient.search(request, RequestOptions.DEFAULT);
+            log.info("total hits: " + response.getHits().getTotalHits());
         } catch(IOException e) {
             log.error("IOException occured.");
-            return null;
+            return makeErrorSearhResultDtoFromSearchResponse();
         }
 
+
+        return makeSearhResultDtoFromSearchResponse(response);
+    }
+
+    private SearchResultDto<FoodTruckRegion> makeSearhResultDtoFromSearchResponse(SearchResponse response) {
         return SearchResultDto.<FoodTruckRegion> builder()
-                .numFound(searchResponse.getHits().getTotalHits().value)
-                .results(
-                    Arrays.stream(searchResponse.getHits().getHits())
+                .status(response.status().name())
+                .numFound(response.getHits().getTotalHits().value)
+                .docs(
+                    Arrays.stream(response.getHits().getHits())
                             .map(hit -> new Gson().fromJson(hit.getSourceAsString(), FoodTruckRegion.class))
                             .collect(Collectors.toList())
                 ).build();
+
     }
 
+    private SearchResultDto<FoodTruckRegion> makeErrorSearhResultDtoFromSearchResponse() {
+        return SearchResultDto.<FoodTruckRegion> builder()
+                .status(RestStatus.INTERNAL_SERVER_ERROR.name())
+                .numFound(0)
+                .docs(Collections.emptyList())
+                .build();
+
+    }
 }

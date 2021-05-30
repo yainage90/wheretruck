@@ -1,23 +1,22 @@
 package com.gamakdragons.wheretruck.truck.controller;
 
+import com.gamakdragons.wheretruck.common.DeleteResultDto;
 import com.gamakdragons.wheretruck.common.IndexResultDto;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
 import com.gamakdragons.wheretruck.common.UpdateResultDto;
-import com.gamakdragons.wheretruck.foodtruck_region.controller.GeoRequest;
 import com.gamakdragons.wheretruck.foodtruck_region.model.GeoLocation;
 import com.gamakdragons.wheretruck.truck.model.Truck;
-import com.gamakdragons.wheretruck.truck.model.TruckIndexRequestDto;
 import com.gamakdragons.wheretruck.truck.service.TruckService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import lombok.extern.slf4j.Slf4j;
@@ -30,39 +29,32 @@ public class TruckController {
     @Autowired
     private TruckService service;
     
-    @RequestMapping(value = "/all", method = {RequestMethod.GET, RequestMethod.POST})
+    @GetMapping("/search/all" )
     public ResponseEntity<SearchResultDto<Truck>> getAllTrucks() {
-        log.info("/truck/all");
+        log.info("/truck/search/all");
 
         return new ResponseEntity<>(service.findAll(), HttpStatus.OK);
     }
 
-    @GetMapping("/geo")
+    @GetMapping("/search/geo")
     public ResponseEntity<SearchResultDto<Truck>> getByGeoLocation(GeoLocation location, float distance) {
-        log.info("/truck/geo. geoLocation=" + location + ", distance=" + distance);
+        log.info("/truck/search/geo. geoLocation=" + location + ", distance=" + distance);
 
         return new ResponseEntity<>(service.findByLocation(location, distance), HttpStatus.OK);
     }
 
-    @PostMapping("/geo")
-    public ResponseEntity<SearchResultDto<Truck>> getByGeoLocation(@RequestBody GeoRequest request) {
-        log.info("/truck/geo. request=" + request);
-
-        return new ResponseEntity<>(service.findByLocation(request.getGeoLocation(), request.getDistance()), HttpStatus.OK);
-    }
-
-    @RequestMapping(value = "/id", method = {RequestMethod.GET, RequestMethod.POST})
+    @GetMapping("/get/id")
     public ResponseEntity<Truck> getById(String id) {
-        log.info("/truck/id. id=" + id);
+        log.info("/truck/search/id. id=" + id);
 
-        return new ResponseEntity<>(service.findById(id), HttpStatus.OK);
+        return new ResponseEntity<>(service.getById(id), HttpStatus.OK);
     }
 
     @PostMapping("/save")
-    public ResponseEntity<IndexResultDto> save(@RequestBody TruckIndexRequestDto dto) {
-        log.info("/truck/save. dto=" + dto);
+    public ResponseEntity<IndexResultDto> save(@RequestBody Truck truck) {
+        log.info("/truck/save. dto=" + truck);
 
-        return new ResponseEntity<>(service.registerTruck(dto), HttpStatus.OK);
+        return new ResponseEntity<>(service.saveTruck(truck), HttpStatus.OK);
     }
 
     @PutMapping("/update")
@@ -72,4 +64,24 @@ public class TruckController {
         return new ResponseEntity<>(service.updateTruck(truck), HttpStatus.OK);
     }
 
+    @DeleteMapping("/delete")
+    public ResponseEntity<DeleteResultDto> delete(String id) {
+        log.info("/truck/delete. id=" + id);
+
+        return new ResponseEntity<>(service.deleteTruck(id), HttpStatus.OK);
+    }
+
+    @PutMapping("/start")
+    public ResponseEntity<UpdateResultDto> startTruck(@RequestBody TruckStartRequest request) {
+        log.info("/truck/start. id=" + request.getId() + ", geoLocation=" + request.getGeoLocation());
+
+        return new ResponseEntity<>(service.openTruck(request.getId(), request.getGeoLocation()), HttpStatus.OK);
+    }
+
+    @PutMapping("/stop")
+    public ResponseEntity<UpdateResultDto> stopTruck(@RequestBody TruckStartRequest request) {
+        log.info("/truck/stop. id=" + request.getId());
+
+        return new ResponseEntity<>(service.stopTruck(request.getId()), HttpStatus.OK);
+    }
 }

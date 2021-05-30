@@ -81,6 +81,9 @@ curl -XPUT 'http://ec2-13-209-181-246.ap-northeast-2.compute.amazonaws.com:9200/
   },
   "mappings": {
     "properties": {
+	  "id": {
+		"type": "keyword"
+	  },
       "name": {
         "type": "keyword"
       },
@@ -107,7 +110,10 @@ curl -XPUT 'http://ec2-13-209-181-246.ap-northeast-2.compute.amazonaws.com:9200/
   },
   "mappings": {
     "properties": {
-      "truckUuid": {
+	  "id": {
+		"type": "keyword"
+	  },
+      "truckId": {
         "type": "keyword"
       },
       "name": {
@@ -137,10 +143,13 @@ curl -XPUT 'http://ec2-13-209-181-246.ap-northeast-2.compute.amazonaws.com:9200/
   },
   "mappings": {
     "properties": {
-      "userUuid": {
+	  "id": {
+		"type": "keyword"
+	  },
+      "userId": {
         "type": "keyword"
       },
-      "truckUuid": {
+      "truckId": {
         "type": "keyword"
       },
       "star": {
@@ -163,10 +172,13 @@ curl -XPUT 'http://ec2-13-209-181-246.ap-northeast-2.compute.amazonaws.com:9200/
   },
   "mappings": {
     "properties": {
-      "userUuid": {
+	  "id": {
+		"type": "keyword"
+	  },
+      "userId": {
         "type": "keyword"
       },
-      "truckUuid": {
+      "truckId": {
         "type": "keyword"
       }
     }

@@ -9,6 +9,7 @@ import lombok.Getter;
 @Builder
 public class SearchResultDto<T> {
     
+    private String status;
     private long numFound;
-    private List<T> results;
+    private List<T> docs;
 }

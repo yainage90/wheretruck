@@ -6,5 +6,6 @@ import lombok.Getter;
 @Getter
 @Builder
 public class UpdateResultDto {
+
     private String result;
 }
