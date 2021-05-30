@@ -1,6 +1,8 @@
 package com.gamakdragons.wheretruck.truck.service;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 import com.gamakdragons.wheretruck.client.ElasticSearchRestClient;
 import com.gamakdragons.wheretruck.common.DeleteResultDto;
@@ -9,6 +11,7 @@ import com.gamakdragons.wheretruck.common.SearchResultDto;
 import com.gamakdragons.wheretruck.common.UpdateResultDto;
 import com.gamakdragons.wheretruck.foodtruck_region.model.GeoLocation;
 import com.gamakdragons.wheretruck.truck.model.Truck;
+import com.gamakdragons.wheretruck.truck.model.TruckIndexRequestDto;
 import com.gamakdragons.wheretruck.util.EsRequestFactory;
 import com.google.gson.Gson;
 
@@ -56,7 +59,14 @@ public class TruckServiceImpl implements TruckService {
             return null;
         }
 
-        return null;
+        return SearchResultDto.<Truck> builder()
+                .numFound(searchResponse.getHits().getTotalHits().value)
+                .results(
+                    Arrays.stream(searchResponse.getHits().getHits())
+                            .map(hit -> new Gson().fromJson(hit.getSourceAsString(), Truck.class))
+                            .collect(Collectors.toList())
+                ).build();
+
     }
 
     @Override
@@ -90,8 +100,8 @@ public class TruckServiceImpl implements TruckService {
     }
 
     @Override
-    public IndexResultDto registerTruck(Truck truck) {
-        IndexRequest request = EsRequestFactory.createIndexRequest(TRUCK_INDEX_NAME, truck);
+    public IndexResultDto registerTruck(TruckIndexRequestDto truckIndexRequestDto) {
+        IndexRequest request = EsRequestFactory.createIndexRequest(TRUCK_INDEX_NAME, truckIndexRequestDto);
         IndexResponse indexResponse;
         try {
             indexResponse = restClient.index(request, RequestOptions.DEFAULT);

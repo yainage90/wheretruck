@@ -16,4 +16,14 @@ public class Truck {
     private GeoLocation geoLocation;
     private String description;
     private boolean isOpened;
+
+    public TruckIndexRequestDto toIndexRequestDto() {
+
+        return TruckIndexRequestDto.builder()
+                .name(name)
+                .geoLocation(geoLocation)
+                .description(description)
+                .isOpened(isOpened)
+                .build();
+    }
 }

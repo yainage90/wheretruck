@@ -83,6 +83,7 @@ public class EsRequestFactory {
     public static IndexRequest createIndexRequest(String indexName, Object object) {
         IndexRequest indexRequest = new IndexRequest();
         indexRequest.source(object);
+        indexRequest.
 
         return indexRequest;
     }
