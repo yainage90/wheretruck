@@ -65,7 +65,7 @@ public class FoodServiceImpl implements FoodService {
     @Override
     public SearchResultDto<Food> findByTruckId(String truckId) {
 
-        SearchRequest request = EsRequestFactory.createTruckIdSearchRequest(FOOD_INDEX_NAME, truckId);
+        SearchRequest request = EsRequestFactory.createSearchByTruckIdRequest(FOOD_INDEX_NAME, truckId);
 
         SearchResponse response;
         try {
@@ -147,7 +147,7 @@ public class FoodServiceImpl implements FoodService {
     
     public DeleteResultDto deleteFood(String id) {
 
-        DeleteRequest request = EsRequestFactory.creatDeleteRequest(FOOD_INDEX_NAME, id);
+        DeleteRequest request = EsRequestFactory.createDeleteByIdRequest(FOOD_INDEX_NAME, id);
         DeleteResponse response;
         try {
             response = restClient.delete(request, RequestOptions.DEFAULT);
