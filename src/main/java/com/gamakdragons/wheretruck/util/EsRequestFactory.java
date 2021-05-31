@@ -98,12 +98,12 @@ public class EsRequestFactory {
         return request;
     }
 
-    public static DeleteRequest creatDeleteRequest(String index, String id) {
+    public static DeleteRequest createDeleteByIdRequest(String index, String id) {
         DeleteRequest request = new DeleteRequest(index, id);
         return request;
     }
 
-    public static SearchRequest createTruckIdSearchRequest(String index, String truckId) {
+    public static SearchRequest createSearchByTruckIdRequest(String index, String truckId) {
         
         SearchRequest request = new SearchRequest(index);
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
@@ -119,7 +119,7 @@ public class EsRequestFactory {
         return request;
     }
 
-    public static DeleteByQueryRequest createDeleteByTruckId(String[] indices, String truckId) {
+    public static DeleteByQueryRequest createDeleteByTruckIdRequest(String[] indices, String truckId) {
         
         DeleteByQueryRequest request = new DeleteByQueryRequest(indices);
 
@@ -129,6 +129,23 @@ public class EsRequestFactory {
         request.setMaxRetries(3);
 
         return request;
+    }
+
+    public static SearchRequest createSearchByUserIdRequest(String index, String userId) {
+
+        SearchRequest request = new SearchRequest(index);
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+
+        TermQueryBuilder termQueryBuilder = new TermQueryBuilder("userId", userId);
+
+        searchSourceBuilder.query(termQueryBuilder);
+        searchSourceBuilder.from(0);
+        searchSourceBuilder.size(10000);
+
+        request.source(searchSourceBuilder);
+
+        return request;
+
     }
     
 }
