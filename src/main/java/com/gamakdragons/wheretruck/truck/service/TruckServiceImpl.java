@@ -72,6 +72,22 @@ public class TruckServiceImpl implements TruckService {
         return makeSearhResultDtoFromSearchResponse(response);
     }
 
+    @Override
+    public SearchResultDto<Truck> findByUserId(String userId) {
+        SearchRequest request = EsRequestFactory.createSearchByUserIdRequest(TRUCK_INDEX_NAME, userId);
+
+        SearchResponse response;
+        try {
+            response = restClient.search(request, RequestOptions.DEFAULT);
+            log.info("total hits: " + response.getHits().getTotalHits());
+        } catch(IOException e) {
+            log.error("IOException occured.");
+            return makeErrorSearhResultDtoFromSearchResponse();
+        }
+
+        return makeSearhResultDtoFromSearchResponse(response);
+    }
+
     
     @Override
     public SearchResultDto<Truck> findByLocation(GeoLocation location, float distance) {
@@ -169,7 +185,7 @@ public class TruckServiceImpl implements TruckService {
     
     @Override
     public DeleteResultDto deleteTruck(String id) {
-        DeleteRequest request = EsRequestFactory.creatDeleteRequest(TRUCK_INDEX_NAME, id);
+        DeleteRequest request = EsRequestFactory.createDeleteByIdRequest(TRUCK_INDEX_NAME, id);
         DeleteResponse response;
         try {
             response = restClient.delete(request, RequestOptions.DEFAULT);
@@ -234,7 +250,7 @@ public class TruckServiceImpl implements TruckService {
 
     private void deleteTruckRelatedSources(String[] indices, String truckId) {
 
-        DeleteByQueryRequest request = EsRequestFactory.createDeleteByTruckId(indices, truckId);
+        DeleteByQueryRequest request = EsRequestFactory.createDeleteByTruckIdRequest(indices, truckId);
         BulkByScrollResponse response;
         try {
             response = restClient.deleteByQuery(request, RequestOptions.DEFAULT);

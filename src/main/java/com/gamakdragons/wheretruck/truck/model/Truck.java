@@ -18,4 +18,5 @@ public class Truck {
     private GeoLocation geoLocation;
     private String description;
     private boolean opened;
+    private String userId;
 }

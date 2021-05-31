@@ -43,6 +43,13 @@ public class TruckController {
         return new ResponseEntity<>(service.findByLocation(location, distance), HttpStatus.OK);
     }
 
+    @GetMapping("/search/userId")
+    public ResponseEntity<SearchResultDto<Truck>> getByUserId(String userId) {
+        log.info("/truck/search/userId. userId=" + userId);
+
+        return new ResponseEntity<>(service.findByUserId(userId), HttpStatus.OK);
+    }
+
     @GetMapping("/get/id")
     public ResponseEntity<Truck> getById(String id) {
         log.info("/truck/search/id. id=" + id);

@@ -10,6 +10,7 @@ import com.gamakdragons.wheretruck.truck.model.Truck;
 public interface TruckService {
     
     SearchResultDto<Truck> findAll();
+    SearchResultDto<Truck> findByUserId(String userId);
     SearchResultDto<Truck> findByLocation(GeoLocation location, float distance);
 
     Truck getById(String id);
@@ -20,7 +21,5 @@ public interface TruckService {
 
     UpdateResultDto openTruck(String id, GeoLocation location);
     UpdateResultDto stopTruck(String id);
-
-    //DeleteResultDto deleteTruckRelatedSources(String[] indices, String truckId);
 
 }
