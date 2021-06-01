@@ -83,9 +83,9 @@ curl -XPUT 'http://ec2-13-209-181-246.ap-northeast-2.compute.amazonaws.com:9200/
   },
   "mappings": {
     "properties": {
-	    "id": {
-		    "type": "keyword"
-	    },
+      "id": {
+        "type": "keyword"
+      },
       "name": {
         "type": "keyword"
       },
@@ -116,9 +116,9 @@ curl -XPUT 'http://ec2-13-209-181-246.ap-northeast-2.compute.amazonaws.com:9200/
   },
   "mappings": {
     "properties": {
-	    "id": {
-		    "type": "keyword"
-	    },
+      "id": {
+        "type": "keyword"
+      },
       "truckId": {
         "type": "keyword"
       },
@@ -133,7 +133,7 @@ curl -XPUT 'http://ec2-13-209-181-246.ap-northeast-2.compute.amazonaws.com:9200/
       },
       "image": {
         "type": "dense_vector",
-        "dims": 128
+		"dims": "128"
       }
     }
   }
@@ -150,9 +150,9 @@ curl -XPUT 'http://ec2-13-209-181-246.ap-northeast-2.compute.amazonaws.com:9200/
   },
   "mappings": {
     "properties": {
-	    "id": {
-		    "type": "keyword"
-	    },
+      "id": {
+        "type": "keyword"
+      },
       "userId": {
         "type": "keyword"
       },
@@ -176,13 +176,13 @@ curl -XPUT 'http://ec2-13-209-181-246.ap-northeast-2.compute.amazonaws.com:9200/
 '{
   "settings": {
     "number_of_shards": 1,
-    "number_of_replicas": 1
+	"number_of_replicas": 1
   },
   "mappings": {
     "properties": {
-	    "id": {
-		    "type": "keyword"
-	    },
+      "id": {
+        "type": "keyword"
+      },
       "userId": {
         "type": "keyword"
       },
@@ -204,9 +204,9 @@ curl -XPUT 'http://ec2-13-209-181-246.ap-northeast-2.compute.amazonaws.com:9200/
   },
   "mappings": {
     "properties": {
-	    "id": {
-		    "type": "keyword"
-	    },
+      "id": {
+        "type": "keyword"
+      },
       "email": {
         "type": "keyword"
       },
@@ -222,3 +222,4 @@ curl -XPUT 'http://ec2-13-209-181-246.ap-northeast-2.compute.amazonaws.com:9200/
     }
   }
 }'
+#!/usr/bin/bash
