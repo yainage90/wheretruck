@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 
-#permission_region
-curl -XPUT 'http://ec2-13-209-181-246.ap-northeast-2.compute.amazonaws.com:9200/permission_region?pretty' \
+#region
+curl -XPUT 'http://ec2-13-209-181-246.ap-northeast-2.compute.amazonaws.com:9200/region?pretty' \
 -H 'Content-Type: application/json' \
 -d \
 '{
