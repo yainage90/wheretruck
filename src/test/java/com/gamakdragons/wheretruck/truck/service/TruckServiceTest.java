@@ -45,7 +45,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import lombok.extern.slf4j.Slf4j;
 
-@SpringBootTest(classes = {TruckServiceImpl.class, ElasticSearchRestClient.class})
+@SpringBootTest(classes = {TruckServiceImpl.class, ElasticSearchRestClient.class}, 
+                properties = {"spring.config.location=classpath:application-test.yml"})
 @Slf4j
 public class TruckServiceTest {
 
@@ -349,6 +350,7 @@ public class TruckServiceTest {
         request.mapping(builder);
 
         CreateIndexResponse response = esClient.indices().create(request, RequestOptions.DEFAULT);
+        log.info("index created: " + response.index());
         if(!response.isAcknowledged()) {
             throw new IOException();
         }
@@ -386,6 +388,7 @@ public class TruckServiceTest {
         if(esClient.indices().exists(getIndexRequest, RequestOptions.DEFAULT)) {
             DeleteIndexRequest request = new DeleteIndexRequest(TEST_TRUCK_INDEX_NAME);
             AcknowledgedResponse response = esClient.indices().delete(request, RequestOptions.DEFAULT);
+            log.info("index deleted: " + response.isAcknowledged());
             if(!response.isAcknowledged()) {
                 throw new IOException();
             }
