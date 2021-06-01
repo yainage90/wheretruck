@@ -1,6 +1,6 @@
 package com.gamakdragons.wheretruck.truck.controller;
 
-import com.gamakdragons.wheretruck.foodtruck_region.model.GeoLocation;
+import com.gamakdragons.wheretruck.common.GeoLocation;
 
 import lombok.Getter;
 import lombok.Setter;

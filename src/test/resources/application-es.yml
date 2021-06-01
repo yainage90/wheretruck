@@ -8,3 +8,5 @@ es:
       name: truck_test
     food:
       name: food_test
+    rating:
+      name: rating

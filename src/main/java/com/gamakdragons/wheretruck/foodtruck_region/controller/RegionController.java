@@ -1,8 +1,8 @@
 package com.gamakdragons.wheretruck.foodtruck_region.controller;
 
+import com.gamakdragons.wheretruck.common.GeoLocation;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
 import com.gamakdragons.wheretruck.foodtruck_region.model.FoodTruckRegion;
-import com.gamakdragons.wheretruck.foodtruck_region.model.GeoLocation;
 import com.gamakdragons.wheretruck.foodtruck_region.service.FoodTruckRegionService;
 
 import org.springframework.beans.factory.annotation.Autowired;

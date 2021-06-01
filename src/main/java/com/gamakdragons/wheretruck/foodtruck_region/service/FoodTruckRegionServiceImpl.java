@@ -6,9 +6,9 @@ import java.util.Collections;
 import java.util.stream.Collectors;
 
 import com.gamakdragons.wheretruck.client.ElasticSearchRestClient;
+import com.gamakdragons.wheretruck.common.GeoLocation;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
 import com.gamakdragons.wheretruck.foodtruck_region.model.FoodTruckRegion;
-import com.gamakdragons.wheretruck.foodtruck_region.model.GeoLocation;
 import com.gamakdragons.wheretruck.util.EsRequestFactory;
 import com.google.gson.Gson;
 

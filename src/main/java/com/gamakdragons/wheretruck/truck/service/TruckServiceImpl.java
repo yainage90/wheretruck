@@ -8,14 +8,15 @@ import java.util.stream.Collectors;
 
 import com.gamakdragons.wheretruck.client.ElasticSearchRestClient;
 import com.gamakdragons.wheretruck.common.DeleteResultDto;
+import com.gamakdragons.wheretruck.common.GeoLocation;
 import com.gamakdragons.wheretruck.common.IndexResultDto;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
 import com.gamakdragons.wheretruck.common.UpdateResultDto;
-import com.gamakdragons.wheretruck.foodtruck_region.model.GeoLocation;
 import com.gamakdragons.wheretruck.truck.model.Truck;
 import com.gamakdragons.wheretruck.util.EsRequestFactory;
 import com.google.gson.Gson;
 
+import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetRequest;
@@ -189,7 +190,11 @@ public class TruckServiceImpl implements TruckService {
         DeleteResponse response;
         try {
             response = restClient.delete(request, RequestOptions.DEFAULT);
-            deleteTruckRelatedSources(new String[]{FOOD_INDEX_NAME, RATING_INDEX_NAME}, id);
+            try {
+                deleteTruckRelatedSources(new String[]{FOOD_INDEX_NAME, RATING_INDEX_NAME}, id);
+            } catch(ElasticsearchStatusException e) {
+                log.error(e.getMessage());
+            }
         } catch(IOException e) {
             log.error("IOException occured.");
             return DeleteResultDto.builder()
