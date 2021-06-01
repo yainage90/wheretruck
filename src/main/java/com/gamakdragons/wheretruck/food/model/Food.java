@@ -1,5 +1,6 @@
 package com.gamakdragons.wheretruck.food.model;
 
+import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -9,6 +10,7 @@ import lombok.ToString;
 @Setter
 @ToString
 @EqualsAndHashCode
+@Builder
 public class Food {
     
     private String id;
