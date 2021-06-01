@@ -4,6 +4,7 @@ import com.gamakdragons.wheretruck.common.GeoLocation;
 
 import org.springframework.format.annotation.DateTimeFormat;
 
+import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -12,6 +13,7 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
+@Builder
 @EqualsAndHashCode
 public class Region {
     
