@@ -1,8 +1,9 @@
 package com.gamakdragons.wheretruck.truck.model;
 
-import com.gamakdragons.wheretruck.foodtruck_region.model.GeoLocation;
+import com.gamakdragons.wheretruck.common.GeoLocation;
 
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -11,6 +12,7 @@ import lombok.ToString;
 @Setter
 @ToString
 @Builder
+@EqualsAndHashCode
 public class Truck {
 
     private String id;

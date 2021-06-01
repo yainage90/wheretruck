@@ -1,7 +1,10 @@
 package com.gamakdragons.wheretruck.foodtruck_region.model;
 
+import com.gamakdragons.wheretruck.common.GeoLocation;
+
 import org.springframework.format.annotation.DateTimeFormat;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -11,6 +14,7 @@ import lombok.ToString;
 @Setter
 @ToString
 @NoArgsConstructor
+@EqualsAndHashCode
 public class FoodTruckRegion {
     
     private String regionName;
