@@ -1,6 +1,6 @@
 package com.gamakdragons.wheretruck.util;
 
-import com.gamakdragons.wheretruck.foodtruck_region.model.GeoLocation;
+import com.gamakdragons.wheretruck.common.GeoLocation;
 import com.google.gson.Gson;
 
 import org.elasticsearch.action.delete.DeleteRequest;
