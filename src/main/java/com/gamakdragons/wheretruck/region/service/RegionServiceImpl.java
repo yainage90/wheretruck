@@ -26,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class RegionServiceImpl implements RegionService {
     
-    @Value("${es.index.food_truck_region.name}")
+    @Value("${es.index.region.name}")
     private String FOOD_TRUCK_REGION_INDEX_NAME;
 
     private final ElasticSearchRestClient restClient;
