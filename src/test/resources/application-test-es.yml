@@ -10,3 +10,7 @@ es:
       name: food_test
     rating:
       name: rating_test
+    user:
+      name: user_test
+    favorite:
+      name: favorite_test

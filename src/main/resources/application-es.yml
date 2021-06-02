@@ -12,3 +12,5 @@ es:
       name: rating
     user:
       name: user
+    favorite:
+      name: favorite
