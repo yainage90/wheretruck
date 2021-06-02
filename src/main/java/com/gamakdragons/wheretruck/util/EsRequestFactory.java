@@ -103,12 +103,12 @@ public class EsRequestFactory {
         return request;
     }
 
-    public static SearchRequest createSearchByTruckIdRequest(String index, String truckId) {
-        
+    public static SearchRequest createSearchByFieldRequest(String index, String field, String value) {
+
         SearchRequest request = new SearchRequest(index);
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
 
-        TermQueryBuilder termQueryBuilder = new TermQueryBuilder("truckId", truckId);
+        TermQueryBuilder termQueryBuilder = new TermQueryBuilder(field, value);
 
         searchSourceBuilder.query(termQueryBuilder);
         searchSourceBuilder.from(0);
@@ -119,11 +119,11 @@ public class EsRequestFactory {
         return request;
     }
 
-    public static DeleteByQueryRequest createDeleteByTruckIdRequest(String[] indices, String truckId) {
+    public static DeleteByQueryRequest createDeleteByFieldRequest(String[] indices, String field, String value) {
         
         DeleteByQueryRequest request = new DeleteByQueryRequest(indices);
 
-        TermQueryBuilder termQueryBuilder = new TermQueryBuilder("truckId", truckId);
+        TermQueryBuilder termQueryBuilder = new TermQueryBuilder(field, value);
         request.setQuery(termQueryBuilder);
 
         request.setMaxRetries(3);
@@ -131,21 +131,4 @@ public class EsRequestFactory {
         return request;
     }
 
-    public static SearchRequest createSearchByUserIdRequest(String index, String userId) {
-
-        SearchRequest request = new SearchRequest(index);
-        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-
-        TermQueryBuilder termQueryBuilder = new TermQueryBuilder("userId", userId);
-
-        searchSourceBuilder.query(termQueryBuilder);
-        searchSourceBuilder.from(0);
-        searchSourceBuilder.size(10000);
-
-        request.source(searchSourceBuilder);
-
-        return request;
-
-    }
-    
 }

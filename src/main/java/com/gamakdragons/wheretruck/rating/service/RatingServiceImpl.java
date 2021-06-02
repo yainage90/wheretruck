@@ -65,7 +65,7 @@ public class RatingServiceImpl implements RatingService {
     @Override
     public SearchResultDto<Rating> findByTruckId(String truckId) {
 
-        SearchRequest request = EsRequestFactory.createSearchByTruckIdRequest(RATING_INDEX_NAME, truckId);
+        SearchRequest request = EsRequestFactory.createSearchByFieldRequest(RATING_INDEX_NAME, "truckId", truckId);
 
         SearchResponse response;
         try {
@@ -102,7 +102,7 @@ public class RatingServiceImpl implements RatingService {
     @Override
     public SearchResultDto<Rating> findByUserId(String userId) {
 
-        SearchRequest request = EsRequestFactory.createSearchByUserIdRequest(RATING_INDEX_NAME, userId);
+        SearchRequest request = EsRequestFactory.createSearchByFieldRequest(RATING_INDEX_NAME, "userId", userId);
 
         SearchResponse response;
         try {

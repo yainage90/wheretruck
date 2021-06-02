@@ -65,7 +65,7 @@ public class FoodServiceImpl implements FoodService {
     @Override
     public SearchResultDto<Food> findByTruckId(String truckId) {
 
-        SearchRequest request = EsRequestFactory.createSearchByTruckIdRequest(FOOD_INDEX_NAME, truckId);
+        SearchRequest request = EsRequestFactory.createSearchByFieldRequest(FOOD_INDEX_NAME, "truckId", truckId);
 
         SearchResponse response;
         try {

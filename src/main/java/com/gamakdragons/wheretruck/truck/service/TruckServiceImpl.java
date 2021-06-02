@@ -75,7 +75,7 @@ public class TruckServiceImpl implements TruckService {
 
     @Override
     public SearchResultDto<Truck> findByUserId(String userId) {
-        SearchRequest request = EsRequestFactory.createSearchByUserIdRequest(TRUCK_INDEX_NAME, userId);
+        SearchRequest request = EsRequestFactory.createSearchByFieldRequest(TRUCK_INDEX_NAME, "userId", userId);
 
         SearchResponse response;
         try {
@@ -255,7 +255,7 @@ public class TruckServiceImpl implements TruckService {
 
     private void deleteTruckRelatedSources(String[] indices, String truckId) {
 
-        DeleteByQueryRequest request = EsRequestFactory.createDeleteByTruckIdRequest(indices, truckId);
+        DeleteByQueryRequest request = EsRequestFactory.createDeleteByFieldRequest(indices, "truckId", truckId);
         BulkByScrollResponse response;
         try {
             response = restClient.deleteByQuery(request, RequestOptions.DEFAULT);

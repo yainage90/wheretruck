@@ -10,3 +10,5 @@ es:
       name: food
     rating:
       name: rating
+    user:
+      name: user
