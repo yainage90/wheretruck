@@ -8,6 +8,8 @@ import com.gamakdragons.wheretruck.user.model.User;
 
 public interface UserService {
     
+    SearchResultDto<User> findAll();
+
     User getById(String id);
 
     SearchResultDto<User> findByEmail(String email);
