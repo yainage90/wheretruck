@@ -3,6 +3,8 @@ package com.gamakdragons.wheretruck.truck.service;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -12,7 +14,7 @@ import com.gamakdragons.wheretruck.common.GeoLocation;
 import com.gamakdragons.wheretruck.common.IndexResultDto;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
 import com.gamakdragons.wheretruck.common.UpdateResultDto;
-import com.gamakdragons.wheretruck.truck.model.Truck;
+import com.gamakdragons.wheretruck.truck.entity.Truck;
 import com.gamakdragons.wheretruck.util.EsRequestFactory;
 import com.google.gson.Gson;
 
@@ -28,9 +30,17 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.TermQueryBuilder;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
 import org.elasticsearch.index.reindex.DeleteByQueryRequest;
 import org.elasticsearch.rest.RestStatus;
+import org.elasticsearch.script.Script;
+import org.elasticsearch.script.ScriptType;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.metrics.Avg;
+import org.elasticsearch.search.aggregations.metrics.AvgAggregationBuilder;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -51,6 +61,7 @@ public class TruckServiceImpl implements TruckService {
     private String RATING_INDEX_NAME;
 
     private final ElasticSearchRestClient restClient;
+
 
     @Autowired
     public TruckServiceImpl(ElasticSearchRestClient restClient) {
@@ -109,7 +120,7 @@ public class TruckServiceImpl implements TruckService {
     private SearchResultDto<Truck> makeSearhResultDtoFromSearchResponse(SearchResponse response) {
         return SearchResultDto.<Truck> builder()
                 .status(response.status().name())
-                .numFound(response.getHits().getTotalHits().value)
+                .numFound((int) response.getHits().getTotalHits().value)
                 .docs(
                     Arrays.stream(response.getHits().getHits())
                             .map(hit -> new Gson().fromJson(hit.getSourceAsString(), Truck.class))
@@ -128,6 +139,7 @@ public class TruckServiceImpl implements TruckService {
 
     @Override
     public Truck getById(String id) {
+
         GetRequest request = EsRequestFactory.createGetRequest(TRUCK_INDEX_NAME, id);
         GetResponse getResponse;
         try {
@@ -137,18 +149,16 @@ public class TruckServiceImpl implements TruckService {
             return null;
         }
 
-        Truck truck = new Gson().fromJson(getResponse.getSourceAsString(), Truck.class);
-
-        return truck;
+        return new Gson().fromJson(getResponse.getSourceAsString(), Truck.class);
     }
 
     @Override
     public IndexResultDto saveTruck(Truck truck) {
 
-        String id = UUID.randomUUID().toString();
-        truck.setId(id);
+        truck.setId(UUID.randomUUID().toString());
+        log.info(truck.toString());
 
-        IndexRequest request = EsRequestFactory.createIndexRequest(TRUCK_INDEX_NAME, id, truck);
+        IndexRequest request = EsRequestFactory.createIndexRequest(TRUCK_INDEX_NAME, truck.getId(), truck);
         IndexResponse response;
         try {
             response = restClient.index(request, RequestOptions.DEFAULT);
@@ -162,12 +172,13 @@ public class TruckServiceImpl implements TruckService {
 
         return IndexResultDto.builder()
                 .result(response.getResult().name())
-                .id(id)
+                .id(response.getId())
                 .build();
     }
 
     @Override
     public UpdateResultDto updateTruck(Truck truck) {
+
         UpdateRequest request = EsRequestFactory.createUpdateRequest(TRUCK_INDEX_NAME, truck.getId(), truck);
         UpdateResponse response;
         try {
@@ -183,7 +194,7 @@ public class TruckServiceImpl implements TruckService {
                 .result(response.getResult().name())
                 .build();
     }
-    
+
     @Override
     public DeleteResultDto deleteTruck(String id) {
         DeleteRequest request = EsRequestFactory.createDeleteByIdRequest(TRUCK_INDEX_NAME, id);
@@ -209,12 +220,21 @@ public class TruckServiceImpl implements TruckService {
 
  
     @Override
-    public UpdateResultDto openTruck(String id, GeoLocation location) {
-        Truck truck = getById(id);
-        truck.setOpened(true);
-        truck.setGeoLocation(location);
+    public UpdateResultDto openTruck(String id, GeoLocation geoLocation) {
 
-        UpdateRequest request = EsRequestFactory.createUpdateRequest(TRUCK_INDEX_NAME, id, truck);
+        UpdateRequest request = new UpdateRequest(TRUCK_INDEX_NAME, id);
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("opened", true);
+        params.put("lat", geoLocation.getLat());
+        params.put("lon", geoLocation.getLon());
+        String script1 = "ctx._source.opened=params.opened;";
+        String script2 = "ctx._source.geoLocation.lat=params.lat;";
+        String script3 = "ctx._source.geoLocation.lon=params.lon;";
+        Script inline = new Script(ScriptType.INLINE, "painless", script1 + script2 + script3, params);
+        
+        request.script(inline);
+
         UpdateResponse response;
         try {
             response = restClient.update(request, RequestOptions.DEFAULT);
@@ -232,10 +252,16 @@ public class TruckServiceImpl implements TruckService {
 
     @Override
     public UpdateResultDto stopTruck(String id) {
-        Truck truck = getById(id);
-        truck.setOpened(false);
 
-        UpdateRequest request = EsRequestFactory.createUpdateRequest(TRUCK_INDEX_NAME, id, truck);
+        UpdateRequest request = new UpdateRequest(TRUCK_INDEX_NAME, id);
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("opened", false);
+        String script = "ctx._source.opened=params.opened;";
+        Script inline = new Script(ScriptType.INLINE, "painless", script, params);
+
+        request.script(inline);
+
         UpdateResponse response;
         try {
             response = restClient.update(request, RequestOptions.DEFAULT);
@@ -265,4 +291,42 @@ public class TruckServiceImpl implements TruckService {
         }
     }
 
+    @Override
+    public void updateRating(String truckId) {
+
+        try {
+            Thread.sleep(2000);
+        } catch(InterruptedException e) {
+            
+        }
+
+        Truck truck = getById(truckId);
+
+        TermQueryBuilder termQueryBuilder = QueryBuilders.termQuery("truckId", truckId);
+        AvgAggregationBuilder scoreAgg = AggregationBuilders.avg("score").field("star");
+
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        searchSourceBuilder.from(0);
+        searchSourceBuilder.size(10);
+        searchSourceBuilder.query(termQueryBuilder);
+        searchSourceBuilder.aggregation(scoreAgg);
+
+        SearchRequest request = new SearchRequest(RATING_INDEX_NAME);
+        request.source(searchSourceBuilder);
+
+        SearchResponse response;
+        try {
+            response = restClient.search(request, RequestOptions.DEFAULT);
+            Avg avg = response.getAggregations().get("score");
+            float score = (float) avg.getValue();
+
+            truck.setNumRating((int) response.getHits().getTotalHits().value);
+            truck.setScore(score);
+            
+            saveTruck(truck);
+        } catch(IOException e) {
+            log.error(e.getMessage());
+        }
+
+    }
 }

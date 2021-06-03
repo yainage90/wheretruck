@@ -12,6 +12,6 @@ import lombok.ToString;
 public class SearchResultDto<T> {
     
     private String status;
-    private long numFound;
+    private int numFound;
     private List<T> docs;
 }

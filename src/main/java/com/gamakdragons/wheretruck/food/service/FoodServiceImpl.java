@@ -11,7 +11,7 @@ import com.gamakdragons.wheretruck.common.DeleteResultDto;
 import com.gamakdragons.wheretruck.common.IndexResultDto;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
 import com.gamakdragons.wheretruck.common.UpdateResultDto;
-import com.gamakdragons.wheretruck.food.model.Food;
+import com.gamakdragons.wheretruck.food.entity.Food;
 import com.gamakdragons.wheretruck.util.EsRequestFactory;
 import com.google.gson.Gson;
 
@@ -83,7 +83,7 @@ public class FoodServiceImpl implements FoodService {
     private SearchResultDto<Food> makeSearhResultDtoFromSearchResponse(SearchResponse response) {
         return SearchResultDto.<Food> builder()
                 .status(response.status().name())
-                .numFound(response.getHits().getTotalHits().value)
+                .numFound((int) response.getHits().getTotalHits().value)
                 .docs(
                     Arrays.stream(response.getHits().getHits())
                             .map(hit -> new Gson().fromJson(hit.getSourceAsString(), Food.class))

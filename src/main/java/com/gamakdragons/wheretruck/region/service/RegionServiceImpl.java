@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 import com.gamakdragons.wheretruck.client.ElasticSearchRestClient;
 import com.gamakdragons.wheretruck.common.GeoLocation;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
-import com.gamakdragons.wheretruck.region.model.Region;
+import com.gamakdragons.wheretruck.region.entity.Region;
 import com.gamakdragons.wheretruck.util.EsRequestFactory;
 import com.google.gson.Gson;
 
@@ -89,7 +89,7 @@ public class RegionServiceImpl implements RegionService {
     private SearchResultDto<Region> makeSearhResultDtoFromSearchResponse(SearchResponse response) {
         return SearchResultDto.<Region> builder()
                 .status(response.status().name())
-                .numFound(response.getHits().getTotalHits().value)
+                .numFound((int) response.getHits().getTotalHits().value)
                 .docs(
                     Arrays.stream(response.getHits().getHits())
                             .map(hit -> new Gson().fromJson(hit.getSourceAsString(), Region.class))

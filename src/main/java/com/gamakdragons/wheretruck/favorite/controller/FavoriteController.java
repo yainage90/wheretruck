@@ -3,7 +3,7 @@ package com.gamakdragons.wheretruck.favorite.controller;
 import com.gamakdragons.wheretruck.common.DeleteResultDto;
 import com.gamakdragons.wheretruck.common.IndexResultDto;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
-import com.gamakdragons.wheretruck.favorite.model.Favorite;
+import com.gamakdragons.wheretruck.favorite.entity.Favorite;
 import com.gamakdragons.wheretruck.favorite.service.FavoriteService;
 
 import org.springframework.beans.factory.annotation.Autowired;

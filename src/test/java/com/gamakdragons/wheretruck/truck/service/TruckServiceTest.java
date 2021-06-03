@@ -3,13 +3,10 @@ package com.gamakdragons.wheretruck.truck.service;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
-
 import static org.hamcrest.MatcherAssert.assertThat;
-
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
-
 import static org.hamcrest.number.IsCloseTo.closeTo;
 
 import java.io.IOException;
@@ -21,7 +18,7 @@ import com.gamakdragons.wheretruck.common.GeoLocation;
 import com.gamakdragons.wheretruck.common.IndexResultDto;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
 import com.gamakdragons.wheretruck.common.UpdateResultDto;
-import com.gamakdragons.wheretruck.truck.model.Truck;
+import com.gamakdragons.wheretruck.truck.entity.Truck;
 
 import org.apache.http.HttpHost;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
@@ -70,14 +67,19 @@ public class TruckServiceTest {
     @BeforeEach
     public void beforeEach() throws IOException {
         initRestHighLevelClient();
-        deleteTestIndex();
+        deleteTestTruckIndex();
         createTestTruckIndex();
+        //deleteTestFoodIndex();
+        //createTestFoodIndex();
+        //deleteTestRatingIndex();
+        //createTestRatingIndex();
+
         createTestData();
     }
 
     @AfterEach
     public void afterEach() throws IOException {
-        deleteTestIndex();
+        deleteTestTruckIndex();
     }
 
     @Test
@@ -102,7 +104,7 @@ public class TruckServiceTest {
 
         
         assertThat(result.getStatus(), is("OK"));
-        assertThat(result.getNumFound(), is(2L));
+        assertThat(result.getNumFound(), is(2));
 
         assertThat(result.getDocs(), hasItems(truck1, truck2));
     }
@@ -129,7 +131,7 @@ public class TruckServiceTest {
 
         
         assertThat(result.getStatus(), is("OK"));
-        assertThat(result.getNumFound(), is(1L));
+        assertThat(result.getNumFound(), is(1));
 
         assertThat(result.getDocs(), hasItem(truck1));
         assertThat(result.getDocs(), not(hasItem(truck2)));
@@ -157,7 +159,7 @@ public class TruckServiceTest {
         log.info(result.toString());
         
         assertThat(result.getStatus(), is("OK"));
-        assertThat(result.getNumFound(), is(1L));
+        assertThat(result.getNumFound(), is(1));
 
         assertThat(result.getDocs().get(0), equalTo(truck1));
     }
@@ -186,7 +188,6 @@ public class TruckServiceTest {
         Truck result2 = service.getById(truck2.getId());
         log.info(result2.toString());
         assertThat(result2, equalTo(truck2));
-
     }
 
     @Test
@@ -341,6 +342,20 @@ public class TruckServiceTest {
                     builder.field("type", "keyword");
                 }
                 builder.endObject();
+                
+                builder.startObject("numRating");
+                {
+                    builder.field("type", "integer");
+                }
+                builder.endObject();
+
+                builder.startObject("score");
+                {
+                    builder.field("type", "float");
+                }
+                builder.endObject();
+
+
 
             }
             builder.endObject();
@@ -383,7 +398,7 @@ public class TruckServiceTest {
                             .build();
     }
 
-    private void deleteTestIndex() throws IOException {
+    private void deleteTestTruckIndex() throws IOException {
         GetIndexRequest getIndexRequest = new GetIndexRequest(TEST_TRUCK_INDEX_NAME);
         if(esClient.indices().exists(getIndexRequest, RequestOptions.DEFAULT)) {
             DeleteIndexRequest request = new DeleteIndexRequest(TEST_TRUCK_INDEX_NAME);

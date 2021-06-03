@@ -10,7 +10,7 @@ import com.gamakdragons.wheretruck.client.ElasticSearchRestClient;
 import com.gamakdragons.wheretruck.common.DeleteResultDto;
 import com.gamakdragons.wheretruck.common.IndexResultDto;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
-import com.gamakdragons.wheretruck.favorite.model.Favorite;
+import com.gamakdragons.wheretruck.favorite.entity.Favorite;
 import com.gamakdragons.wheretruck.util.EsRequestFactory;
 import com.google.gson.Gson;
 
@@ -117,7 +117,7 @@ public class FavoriteServiceImpl implements FavoriteService {
     private SearchResultDto<Favorite> makeSearhResultDtoFromSearchResponse(SearchResponse response) {
         return SearchResultDto.<Favorite> builder()
                 .status(response.status().name())
-                .numFound(response.getHits().getTotalHits().value)
+                .numFound((int) response.getHits().getTotalHits().value)
                 .docs(
                     Arrays.stream(response.getHits().getHits())
                             .map(hit -> new Gson().fromJson(hit.getSourceAsString(), Favorite.class))

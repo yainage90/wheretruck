@@ -4,7 +4,7 @@ import com.gamakdragons.wheretruck.common.DeleteResultDto;
 import com.gamakdragons.wheretruck.common.IndexResultDto;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
 import com.gamakdragons.wheretruck.common.UpdateResultDto;
-import com.gamakdragons.wheretruck.food.model.Food;
+import com.gamakdragons.wheretruck.food.entity.Food;
 import com.gamakdragons.wheretruck.food.service.FoodService;
 
 import org.springframework.beans.factory.annotation.Autowired;

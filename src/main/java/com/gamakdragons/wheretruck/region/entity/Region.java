@@ -1,4 +1,4 @@
-package com.gamakdragons.wheretruck.region.model;
+package com.gamakdragons.wheretruck.region.entity;
 
 import com.gamakdragons.wheretruck.common.GeoLocation;
 

@@ -4,7 +4,7 @@ import com.gamakdragons.wheretruck.common.DeleteResultDto;
 import com.gamakdragons.wheretruck.common.IndexResultDto;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
 import com.gamakdragons.wheretruck.common.UpdateResultDto;
-import com.gamakdragons.wheretruck.user.model.User;
+import com.gamakdragons.wheretruck.user.entity.User;
 import com.gamakdragons.wheretruck.user.service.UserService;
 
 import org.springframework.beans.factory.annotation.Autowired;

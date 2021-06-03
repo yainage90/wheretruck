@@ -10,7 +10,7 @@ import com.gamakdragons.wheretruck.common.DeleteResultDto;
 import com.gamakdragons.wheretruck.common.IndexResultDto;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
 import com.gamakdragons.wheretruck.common.UpdateResultDto;
-import com.gamakdragons.wheretruck.user.model.User;
+import com.gamakdragons.wheretruck.user.entity.User;
 import com.gamakdragons.wheretruck.util.EsRequestFactory;
 import com.google.gson.Gson;
 
@@ -110,7 +110,7 @@ public class UserServiceImpl implements UserService {
     private SearchResultDto<User> makeSearhResultDtoFromSearchResponse(SearchResponse response) {
         return SearchResultDto.<User> builder()
                 .status(response.status().name())
-                .numFound(response.getHits().getTotalHits().value)
+                .numFound((int) response.getHits().getTotalHits().value)
                 .docs(
                     Arrays.stream(response.getHits().getHits())
                             .map(hit -> new Gson().fromJson(hit.getSourceAsString(), User.class))

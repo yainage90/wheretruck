@@ -35,11 +35,11 @@ public class EsRequestFactory {
         SearchRequest request = new SearchRequest(indexName);
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
 
-        GeoDistanceQueryBuilder geoDistanceQuery = new GeoDistanceQueryBuilder("geoLocation");
+        GeoDistanceQueryBuilder geoDistanceQuery = QueryBuilders.geoDistanceQuery("geoLocation");
         geoDistanceQuery.point(new GeoPoint(geoLocation.getLat(), geoLocation.getLon()));
         geoDistanceQuery.distance(distance + "km");
 
-        BoolQueryBuilder queryBuilder = new BoolQueryBuilder();
+        BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery();
         queryBuilder.must(QueryBuilders.matchAllQuery());
         queryBuilder.filter(geoDistanceQuery);
 
@@ -57,7 +57,7 @@ public class EsRequestFactory {
         SearchRequest request = new SearchRequest(indexName);
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
         
-        BoolQueryBuilder queryBuilder = new BoolQueryBuilder();
+        BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery();
         
         if(city != null && city.trim().length() > 0) {
             TermQueryBuilder cityQuery = QueryBuilders.termQuery("city", city);
@@ -108,8 +108,7 @@ public class EsRequestFactory {
         SearchRequest request = new SearchRequest(index);
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
 
-        TermQueryBuilder termQueryBuilder = new TermQueryBuilder(field, value);
-
+        TermQueryBuilder termQueryBuilder = QueryBuilders.termQuery(field, value);
         searchSourceBuilder.query(termQueryBuilder);
         searchSourceBuilder.from(0);
         searchSourceBuilder.size(10000);
@@ -123,7 +122,7 @@ public class EsRequestFactory {
         
         DeleteByQueryRequest request = new DeleteByQueryRequest(indices);
 
-        TermQueryBuilder termQueryBuilder = new TermQueryBuilder(field, value);
+        TermQueryBuilder termQueryBuilder = QueryBuilders.termQuery(field, value);
         request.setQuery(termQueryBuilder);
 
         request.setMaxRetries(3);

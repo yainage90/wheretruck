@@ -3,7 +3,7 @@ package com.gamakdragons.wheretruck.favorite.service;
 import com.gamakdragons.wheretruck.common.DeleteResultDto;
 import com.gamakdragons.wheretruck.common.IndexResultDto;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
-import com.gamakdragons.wheretruck.favorite.model.Favorite;
+import com.gamakdragons.wheretruck.favorite.entity.Favorite;
 
 public interface FavoriteService {
     

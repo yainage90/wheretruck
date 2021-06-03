@@ -11,7 +11,8 @@ import com.gamakdragons.wheretruck.common.DeleteResultDto;
 import com.gamakdragons.wheretruck.common.IndexResultDto;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
 import com.gamakdragons.wheretruck.common.UpdateResultDto;
-import com.gamakdragons.wheretruck.rating.model.Rating;
+import com.gamakdragons.wheretruck.rating.entity.Rating;
+import com.gamakdragons.wheretruck.truck.service.TruckService;
 import com.gamakdragons.wheretruck.util.EsRequestFactory;
 import com.google.gson.Gson;
 
@@ -42,9 +43,12 @@ public class RatingServiceImpl implements RatingService {
 
     private final ElasticSearchRestClient restClient;
 
+    private final TruckService truckService;
+
     @Autowired
-    public RatingServiceImpl (ElasticSearchRestClient restClient) {
+    public RatingServiceImpl (ElasticSearchRestClient restClient, TruckService truckService) {
         this.restClient = restClient;
+        this.truckService = truckService;
     }
 
     @Override
@@ -82,7 +86,7 @@ public class RatingServiceImpl implements RatingService {
     private SearchResultDto<Rating> makeSearhResultDtoFromSearchResponse(SearchResponse response) {
         return SearchResultDto.<Rating> builder()
                 .status(response.status().name())
-                .numFound(response.getHits().getTotalHits().value)
+                .numFound((int) response.getHits().getTotalHits().value)
                 .docs(
                     Arrays.stream(response.getHits().getHits())
                             .map(hit -> new Gson().fromJson(hit.getSourceAsString(), Rating.class))
@@ -119,13 +123,13 @@ public class RatingServiceImpl implements RatingService {
     @Override
     public IndexResultDto saveRating(Rating rating) {
 
-        String id = UUID.randomUUID().toString();
-        rating.setId(id);
+        rating.setId(UUID.randomUUID().toString());
 
-        IndexRequest request = EsRequestFactory.createIndexRequest(RATING_INDEX_NAME, id, rating);
+        IndexRequest request = EsRequestFactory.createIndexRequest(RATING_INDEX_NAME, rating.getId(), rating);
         IndexResponse response;
         try {
             response = restClient.index(request, RequestOptions.DEFAULT);
+            truckService.updateRating(rating.getTruckId());
         } catch(IOException e) {
             log.error("IOException occured.");
             return IndexResultDto.builder()
@@ -136,7 +140,7 @@ public class RatingServiceImpl implements RatingService {
 
         return IndexResultDto.builder()
                 .result(response.getResult().name())
-                .id(id)
+                .id(rating.getId())
                 .build();
     }
 
@@ -147,6 +151,7 @@ public class RatingServiceImpl implements RatingService {
         UpdateResponse response;
         try {
             response = restClient.update(request, RequestOptions.DEFAULT);
+            truckService.updateRating(rating.getTruckId());
         } catch(IOException e) {
             log.error("IOException occured.");
             return UpdateResultDto.builder()

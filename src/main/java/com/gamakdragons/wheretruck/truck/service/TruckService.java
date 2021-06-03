@@ -5,7 +5,7 @@ import com.gamakdragons.wheretruck.common.GeoLocation;
 import com.gamakdragons.wheretruck.common.IndexResultDto;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
 import com.gamakdragons.wheretruck.common.UpdateResultDto;
-import com.gamakdragons.wheretruck.truck.model.Truck;
+import com.gamakdragons.wheretruck.truck.entity.Truck;
 
 public interface TruckService {
     
@@ -22,4 +22,5 @@ public interface TruckService {
     UpdateResultDto openTruck(String id, GeoLocation location);
     UpdateResultDto stopTruck(String id);
 
+    void updateRating(String truckId);
 }

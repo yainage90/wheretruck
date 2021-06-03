@@ -100,6 +100,12 @@ curl -XPUT 'http://ec2-13-209-181-246.ap-northeast-2.compute.amazonaws.com:9200/
       },
       "userId": {
         "type": "keyword"
+      },
+      "numRating": {
+        "type": "integer"
+      },
+      "score": {
+        "type": "float"
       }
     }
   }

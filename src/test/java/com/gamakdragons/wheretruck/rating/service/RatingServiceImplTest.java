@@ -10,10 +10,14 @@ import java.util.UUID;
 
 import com.gamakdragons.wheretruck.client.ElasticSearchRestClient;
 import com.gamakdragons.wheretruck.common.DeleteResultDto;
+import com.gamakdragons.wheretruck.common.GeoLocation;
 import com.gamakdragons.wheretruck.common.IndexResultDto;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
 import com.gamakdragons.wheretruck.common.UpdateResultDto;
-import com.gamakdragons.wheretruck.rating.model.Rating;
+import com.gamakdragons.wheretruck.rating.entity.Rating;
+import com.gamakdragons.wheretruck.truck.entity.Truck;
+import com.gamakdragons.wheretruck.truck.service.TruckService;
+import com.gamakdragons.wheretruck.truck.service.TruckServiceImpl;
 
 import org.apache.http.HttpHost;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
@@ -37,16 +41,22 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import lombok.extern.slf4j.Slf4j;
 
-@SpringBootTest(classes = {RatingServiceImpl.class, ElasticSearchRestClient.class}, 
+@SpringBootTest(classes = {RatingServiceImpl.class, TruckServiceImpl.class, ElasticSearchRestClient.class}, 
                 properties = {"spring.config.location=classpath:application-test.yml"})
 @Slf4j
 public class RatingServiceImplTest {
 
     @Autowired
-    private RatingService service;
+    private TruckService truckService;
+
+    @Autowired
+    private RatingService ratingService;
     
     @Value("${es.index.rating.name}")
     private String TEST_RATING_INDEX_NAME;
+
+    @Value("${es.index.truck.name}")
+    private String TEST_TRUCK_INDEX_NAME;
 
     @Value("${es.host}")
     private String ES_HOST;
@@ -57,59 +67,66 @@ public class RatingServiceImplTest {
     private RestHighLevelClient esClient;
 
     private Rating rating;
+    private Truck truck;
 
     @BeforeEach
-    public void beforeEach() throws IOException {
+    public void beforeEach() throws IOException, InterruptedException {
         initRestHighLevelClient();
-        deleteTestIndex();
+
+        deleteTestTruckIndex();
         createTestTruckIndex();
-        createTestData();
+        createAndIndexTestTruckData();
+
+        deleteTestRatingIndex();
+        createTestRatingIndex();
+        createTestRatingData();
     }
 
     @AfterEach
     public void afterEach() throws IOException {
-        deleteTestIndex();
+        deleteTestRatingIndex();
+        deleteTestTruckIndex();
     }
 
     @Test
     void testDeleteRating() {
 
-        IndexResultDto indexResult = service.saveRating(rating);
+        IndexResultDto indexResult = ratingService.saveRating(rating);
         log.info("rating index result: " + indexResult.getResult() + ", rating id: " + indexResult.getId());
 
         assertThat(indexResult.getResult(), is("CREATED"));
 
         try {
-            Thread.sleep(2000);
+            Thread.sleep(500);
         } catch(InterruptedException e) {
             e.printStackTrace();
         }
 
-        DeleteResultDto deleteResult = service.deleteRating(rating.getId());
+        DeleteResultDto deleteResult = ratingService.deleteRating(rating.getId());
 
         assertThat(deleteResult.getResult(), is("DELETED"));
-        assertThat(service.getById(rating.getId()), nullValue());
+        assertThat(ratingService.getById(rating.getId()), nullValue());
     }
 
     @Test
     void testFindByTruckId() {
 
-        IndexResultDto indexResult = service.saveRating(rating);
+        IndexResultDto indexResult = ratingService.saveRating(rating);
         log.info("rating index result: " + indexResult.getResult() + ", rating id: " + indexResult.getId());
 
         assertThat(indexResult.getResult(), is("CREATED"));
 
         try {
-            Thread.sleep(2000);
+            Thread.sleep(500);
         } catch(InterruptedException e) {
             e.printStackTrace();
         }
 
-        SearchResultDto<Rating> result = service.findByTruckId("truckid");
+        SearchResultDto<Rating> result = ratingService.findByTruckId("truckid");
         log.info(result.toString());
 
         assertThat(result.getStatus(), equalTo("OK"));
-        assertThat(result.getNumFound(), equalTo(1L));
+        assertThat(result.getNumFound(), equalTo(1));
         assertThat(result.getDocs().get(0), equalTo(rating));
 
     }
@@ -117,22 +134,22 @@ public class RatingServiceImplTest {
     @Test
     void testFindByUserId() {
 
-        IndexResultDto indexResult = service.saveRating(rating);
+        IndexResultDto indexResult = ratingService.saveRating(rating);
         log.info("rating index result: " + indexResult.getResult() + ", rating id: " + indexResult.getId());
 
         assertThat(indexResult.getResult(), is("CREATED"));
 
         try {
-            Thread.sleep(2000);
+            Thread.sleep(500);
         } catch(InterruptedException e) {
             e.printStackTrace();
         }
 
-        SearchResultDto<Rating> result = service.findByUserId("userid");
+        SearchResultDto<Rating> result = ratingService.findByUserId("userid");
         log.info(result.toString());
 
         assertThat(result.getStatus(), equalTo("OK"));
-        assertThat(result.getNumFound(), equalTo(1L));
+        assertThat(result.getNumFound(), equalTo(1));
         assertThat(result.getDocs().get(0), equalTo(rating));
 
     }
@@ -140,18 +157,18 @@ public class RatingServiceImplTest {
     @Test
     void testGetById() {
 
-        IndexResultDto indexResult = service.saveRating(rating);
+        IndexResultDto indexResult = ratingService.saveRating(rating);
         log.info("rating index result: " + indexResult.getResult() + ", rating id: " + indexResult.getId());
 
         assertThat(indexResult.getResult(), is("CREATED"));
 
         try {
-            Thread.sleep(2000);
+            Thread.sleep(500);
         } catch(InterruptedException e) {
             e.printStackTrace();
         }
 
-        Rating resultRating = service.getById(rating.getId());
+        Rating resultRating = ratingService.getById(rating.getId());
         log.info(resultRating.toString());
         assertThat(resultRating, equalTo(rating));
 
@@ -160,7 +177,7 @@ public class RatingServiceImplTest {
     @Test
     void testSaveRating() {
 
-        IndexResultDto indexResult = service.saveRating(rating);
+        IndexResultDto indexResult = ratingService.saveRating(rating);
         log.info("rating index result: " + indexResult.getResult() + ", rating id: " + indexResult.getId());
 
         assertThat(indexResult.getResult(), is("CREATED"));
@@ -171,23 +188,23 @@ public class RatingServiceImplTest {
     @Test
     void testUpdateRating() {
 
-        IndexResultDto indexResult = service.saveRating(rating);
+        IndexResultDto indexResult = ratingService.saveRating(rating);
         log.info("rating index result: " + indexResult.getResult() + ", rating id: " + indexResult.getId());
 
         assertThat(indexResult.getResult(), is("CREATED"));
 
         try {
-            Thread.sleep(2000);
+            Thread.sleep(500);
         } catch(InterruptedException e) {
             e.printStackTrace();
         }
 
         String commentToUpdate = "정말 재밌어요ㅋㅋ";
         rating.setComment(commentToUpdate);
-        UpdateResultDto updateResult = service.updateRating(rating);
+        UpdateResultDto updateResult = ratingService.updateRating(rating);
 
         assertThat(updateResult.getResult(), is("UPDATED"));
-        assertThat(service.getById(rating.getId()).getComment(), equalTo(commentToUpdate));
+        assertThat(ratingService.getById(rating.getId()).getComment(), equalTo(commentToUpdate));
 
     }
 
@@ -199,7 +216,7 @@ public class RatingServiceImplTest {
         this.esClient = new RestHighLevelClient(builder);
     }
 
-    private void createTestTruckIndex() throws IOException {
+    private void createTestRatingIndex() throws IOException {
 
         CreateIndexRequest request = new CreateIndexRequest(TEST_RATING_INDEX_NAME);
 
@@ -256,28 +273,142 @@ public class RatingServiceImplTest {
         }
 
         try {
+            Thread.sleep(500);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void createTestRatingData() throws InterruptedException {
+
+        rating = Rating.builder()
+                            .id(UUID.randomUUID().toString())
+                            .star(5)
+                            .comment("맛있어요")
+                            .truckId(truck.getId())
+                            .userId("userid")
+                            .build();
+
+    }
+
+    private void deleteTestRatingIndex() throws IOException {
+        GetIndexRequest getIndexRequest = new GetIndexRequest(TEST_RATING_INDEX_NAME);
+        if(esClient.indices().exists(getIndexRequest, RequestOptions.DEFAULT)) {
+            DeleteIndexRequest request = new DeleteIndexRequest(TEST_RATING_INDEX_NAME);
+            AcknowledgedResponse response = esClient.indices().delete(request, RequestOptions.DEFAULT);
+            log.info("index deleted: " + response.isAcknowledged());
+            if(!response.isAcknowledged()) {
+                throw new IOException();
+            }
+        }
+
+    }
+
+    private void createTestTruckIndex() throws IOException {
+
+        CreateIndexRequest request = new CreateIndexRequest(TEST_TRUCK_INDEX_NAME);
+
+        request.settings(Settings.builder()
+            .put("index.number_of_shards", 3)
+            .put("index.number_of_replicas", 1)
+        );
+
+        XContentBuilder builder = XContentFactory.jsonBuilder();
+        builder.startObject();
+        {
+            builder.startObject("properties");
+            {
+                builder.startObject("id");
+                {
+                    builder.field("type", "keyword");
+                }
+                builder.endObject();
+
+                builder.startObject("name");
+                {
+                    builder.field("type", "keyword");
+                }
+                builder.endObject();
+
+                builder.startObject("geoLocation");
+                {
+                    builder.field("type", "geo_point");
+                }
+                builder.endObject();
+
+                builder.startObject("description");
+                {
+                    builder.field("type", "keyword");
+                }
+                builder.endObject();
+
+                builder.startObject("opened");
+                {
+                    builder.field("type", "boolean");
+                }
+                builder.endObject();
+
+                builder.startObject("userId");
+                {
+                    builder.field("type", "keyword");
+                }
+                builder.endObject();
+                
+                builder.startObject("numRating");
+                {
+                    builder.field("type", "integer");
+                }
+                builder.endObject();
+
+                builder.startObject("score");
+                {
+                    builder.field("type", "float");
+                }
+                builder.endObject();
+
+
+
+            }
+            builder.endObject();
+        }
+        builder.endObject();
+
+        request.mapping(builder);
+
+        CreateIndexResponse response = esClient.indices().create(request, RequestOptions.DEFAULT);
+        log.info("index created: " + response.index());
+        if(!response.isAcknowledged()) {
+            throw new IOException();
+        }
+
+        try {
             Thread.sleep(1000);
         } catch(InterruptedException e) {
             e.printStackTrace();
         }
     }
 
-    private void createTestData() {
+    private void createAndIndexTestTruckData() throws InterruptedException {
 
-        rating = Rating.builder()
+        truck = Truck.builder()
                             .id(UUID.randomUUID().toString())
-                            .star(5)
-                            .comment("맛있어요")
-                            .truckId("truckid")
-                            .userId("userid")
+                            .name("truck")
+                            .geoLocation(GeoLocation.builder().lat(30).lon(130).build())
+                            .description("this is truck")
+                            .opened(false)
+                            .userId("1")
                             .build();
+        
+        truckService.saveTruck(truck);
 
+        Thread.sleep(1000);
+        
     }
 
-    private void deleteTestIndex() throws IOException {
-        GetIndexRequest getIndexRequest = new GetIndexRequest(TEST_RATING_INDEX_NAME);
+    private void deleteTestTruckIndex() throws IOException {
+        GetIndexRequest getIndexRequest = new GetIndexRequest(TEST_TRUCK_INDEX_NAME);
         if(esClient.indices().exists(getIndexRequest, RequestOptions.DEFAULT)) {
-            DeleteIndexRequest request = new DeleteIndexRequest(TEST_RATING_INDEX_NAME);
+            DeleteIndexRequest request = new DeleteIndexRequest(TEST_TRUCK_INDEX_NAME);
             AcknowledgedResponse response = esClient.indices().delete(request, RequestOptions.DEFAULT);
             log.info("index deleted: " + response.isAcknowledged());
             if(!response.isAcknowledged()) {

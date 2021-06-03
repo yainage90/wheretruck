@@ -1,4 +1,4 @@
-package com.gamakdragons.wheretruck.food.model;
+package com.gamakdragons.wheretruck.food.entity;
 
 import lombok.Builder;
 import lombok.EqualsAndHashCode;

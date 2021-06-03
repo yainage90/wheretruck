@@ -2,7 +2,7 @@ package com.gamakdragons.wheretruck.region.controller;
 
 import com.gamakdragons.wheretruck.common.GeoLocation;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
-import com.gamakdragons.wheretruck.region.model.Region;
+import com.gamakdragons.wheretruck.region.entity.Region;
 import com.gamakdragons.wheretruck.region.service.RegionService;
 
 import org.springframework.beans.factory.annotation.Autowired;

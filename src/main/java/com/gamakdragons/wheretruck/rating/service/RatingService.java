@@ -4,7 +4,7 @@ import com.gamakdragons.wheretruck.common.DeleteResultDto;
 import com.gamakdragons.wheretruck.common.IndexResultDto;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
 import com.gamakdragons.wheretruck.common.UpdateResultDto;
-import com.gamakdragons.wheretruck.rating.model.Rating;
+import com.gamakdragons.wheretruck.rating.entity.Rating;
 
 public interface RatingService {
     

@@ -13,7 +13,7 @@ import com.gamakdragons.wheretruck.client.ElasticSearchRestClient;
 import com.gamakdragons.wheretruck.common.DeleteResultDto;
 import com.gamakdragons.wheretruck.common.IndexResultDto;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
-import com.gamakdragons.wheretruck.favorite.model.Favorite;
+import com.gamakdragons.wheretruck.favorite.entity.Favorite;
 
 import org.apache.http.HttpHost;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;

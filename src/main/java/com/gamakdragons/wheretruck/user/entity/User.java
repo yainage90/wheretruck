@@ -1,4 +1,4 @@
-package com.gamakdragons.wheretruck.user.model;
+package com.gamakdragons.wheretruck.user.entity;
 
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
