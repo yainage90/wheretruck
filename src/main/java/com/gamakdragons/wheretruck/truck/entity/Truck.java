@@ -17,6 +17,8 @@ public class Truck {
 
     private String id;
     private String name;
+    private float score;
+    private int numRating;
     private GeoLocation geoLocation;
     private String description;
     private boolean opened;
