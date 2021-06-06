@@ -8,4 +8,5 @@ import lombok.Getter;
 public class UpdateResultDto {
 
     private String result;
+    private String id;
 }
