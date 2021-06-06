@@ -1,33 +1,22 @@
 package com.gamakdragons.wheretruck.rating.service;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
-import com.gamakdragons.wheretruck.client.ElasticSearchRestClient;
-import com.gamakdragons.wheretruck.common.DeleteResultDto;
-import com.gamakdragons.wheretruck.common.IndexResultDto;
-import com.gamakdragons.wheretruck.common.SearchResultDto;
 import com.gamakdragons.wheretruck.common.UpdateResultDto;
+import com.gamakdragons.wheretruck.elasticsearch.service.ElasticSearchServiceImpl;
 import com.gamakdragons.wheretruck.rating.entity.Rating;
-import com.gamakdragons.wheretruck.truck.service.TruckService;
 import com.gamakdragons.wheretruck.util.EsRequestFactory;
-import com.google.gson.Gson;
 
-import org.elasticsearch.action.delete.DeleteRequest;
-import org.elasticsearch.action.delete.DeleteResponse;
-import org.elasticsearch.action.get.GetRequest;
-import org.elasticsearch.action.get.GetResponse;
-import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.rest.RestStatus;
+import org.elasticsearch.script.Script;
+import org.elasticsearch.script.ScriptType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -38,107 +27,47 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class RatingServiceImpl implements RatingService {
     
-    @Value("${es.index.rating.name}")
-    private String RATING_INDEX_NAME;
+    @Value("${es.index.truck.name}")
+    private String TRUCK_INDEX;
 
-    private final ElasticSearchRestClient restClient;
-
-    private final TruckService truckService;
+    private final ElasticSearchServiceImpl restClient;
 
     @Autowired
-    public RatingServiceImpl (ElasticSearchRestClient restClient, TruckService truckService) {
+    public RatingServiceImpl (ElasticSearchServiceImpl restClient) {
         this.restClient = restClient;
-        this.truckService = truckService;
     }
 
     @Override
-    public Rating getById(String id) {
-
-        GetRequest request = EsRequestFactory.createGetRequest(RATING_INDEX_NAME, id);
-        GetResponse getResponse;
-        try {
-            getResponse = restClient.get(request, RequestOptions.DEFAULT);
-        } catch(IOException e) {
-            log.error("IOException occured.");
-            return null;
-        }
-
-        return new Gson().fromJson(getResponse.getSourceAsString(), Rating.class);
-    }
-
-    @Override
-    public SearchResultDto<Rating> findByTruckId(String truckId) {
-
-        SearchRequest request = EsRequestFactory.createSearchByFieldRequest(RATING_INDEX_NAME, "truckId", truckId);
-
-        SearchResponse response;
-        try {
-            response = restClient.search(request, RequestOptions.DEFAULT);
-            log.info("total hits: " + response.getHits().getTotalHits());
-        } catch(IOException e) {
-            log.error("IOException occured.");
-            return makeErrorSearhResultDtoFromSearchResponse();
-        }
-
-        return makeSearhResultDtoFromSearchResponse(response);
-    }
-
-    private SearchResultDto<Rating> makeSearhResultDtoFromSearchResponse(SearchResponse response) {
-        return SearchResultDto.<Rating> builder()
-                .status(response.status().name())
-                .numFound((int) response.getHits().getTotalHits().value)
-                .docs(
-                    Arrays.stream(response.getHits().getHits())
-                            .map(hit -> new Gson().fromJson(hit.getSourceAsString(), Rating.class))
-                            .collect(Collectors.toList())
-                ).build();
-    }
-
-    private SearchResultDto<Rating> makeErrorSearhResultDtoFromSearchResponse() {
-        return SearchResultDto.<Rating> builder()
-                .status(RestStatus.INTERNAL_SERVER_ERROR.name())
-                .numFound(0)
-                .docs(Collections.emptyList())
-                .build();
-
-    }
-
-    @Override
-    public SearchResultDto<Rating> findByUserId(String userId) {
-
-        SearchRequest request = EsRequestFactory.createSearchByFieldRequest(RATING_INDEX_NAME, "userId", userId);
-
-        SearchResponse response;
-        try {
-            response = restClient.search(request, RequestOptions.DEFAULT);
-            log.info("total hits: " + response.getHits().getTotalHits());
-        } catch(IOException e) {
-            log.error("IOException occured.");
-            return makeErrorSearhResultDtoFromSearchResponse();
-        }
-
-        return makeSearhResultDtoFromSearchResponse(response);
-    }
-
-    @Override
-    public IndexResultDto saveRating(Rating rating) {
+    public UpdateResultDto saveRating(Rating rating) {
 
         rating.setId(UUID.randomUUID().toString());
+        String current = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        rating.setCreatedDate(current);
+        rating.setUpdatedDate(current);
 
-        IndexRequest request = EsRequestFactory.createIndexRequest(RATING_INDEX_NAME, rating.getId(), rating);
-        IndexResponse response;
+        Map<String, Object> params = new HashMap<>();
+        params.put("rating", rating);
+
+        String script = "if(ctx._source.foods == null) {ctx._source.foods = new ArrayList();}" + 
+                        "ctx._source.ratings.add(params.rating);" + 
+                        "ctx._source.numRating=ctx._source.ratings.stream().count();" + 
+                        "ctx._source.starAvg=ctx._source.ratings.stream().mapToDouble(r -> r.star).average().getAsDouble();";
+        Script inline = new Script(ScriptType.INLINE, "painless", script, params);
+
+        UpdateRequest request = EsRequestFactory.createUpdateWithScriptRequest(TRUCK_INDEX, rating.getTruckId(), inline);
+
+        UpdateResponse response;
         try {
-            response = restClient.index(request, RequestOptions.DEFAULT);
-            truckService.updateRating(rating.getTruckId());
+            response = restClient.update(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error("IOException occured.");
-            return IndexResultDto.builder()
+            return UpdateResultDto.builder()
                 .result(e.getLocalizedMessage())
                 .build();
 
         }
 
-        return IndexResultDto.builder()
+        return UpdateResultDto.builder()
                 .result(response.getResult().name())
                 .id(rating.getId())
                 .build();
@@ -147,11 +76,26 @@ public class RatingServiceImpl implements RatingService {
     @Override
     public UpdateResultDto updateRating(Rating rating) {
 
-        UpdateRequest request = EsRequestFactory.createUpdateRequest(RATING_INDEX_NAME, rating.getId(), rating);
+        rating.setUpdatedDate(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        Map<String, Object> params = new HashMap<>();
+        params.put("rating", rating);
+
+        String script = "def target = ctx._source.ratings.find(rating -> rating.id == params.rating.id);" +
+                        "target.userId= params.rating.userId;" + 
+                        "target.truckId = params.rating.truckId;" +
+                        "target.star = params.rating.star;" +
+                        "target.comment = params.rating.comment" +
+                        "ctx._source.numRating=ctx._source.ratings.stream().count();" + 
+                        "ctx._source.starAvg=ctx._source.ratings.stream().mapToDouble(r -> r.star).average().getAsDouble();";
+
+
+        Script inline = new Script(ScriptType.INLINE, "painless", script, params);
+
+        UpdateRequest request = EsRequestFactory.createUpdateWithScriptRequest(TRUCK_INDEX, rating.getTruckId(), inline);
+
         UpdateResponse response;
         try {
             response = restClient.update(request, RequestOptions.DEFAULT);
-            truckService.updateRating(rating.getTruckId());
         } catch(IOException e) {
             log.error("IOException occured.");
             return UpdateResultDto.builder()
@@ -161,25 +105,33 @@ public class RatingServiceImpl implements RatingService {
 
         return UpdateResultDto.builder()
                 .result(response.getResult().name())
+                .id(rating.getId())
                 .build();
 
     }
 
     @Override
-    public DeleteResultDto deleteRating(String id) {
+    public UpdateResultDto deleteRating(String truckId, String id) {
+        
+        Map<String, Object> params = new HashMap<>();
+        params.put("id", id);
 
-        DeleteRequest request = EsRequestFactory.createDeleteByIdRequest(RATING_INDEX_NAME, id);
-        DeleteResponse response;
+        String script = "def target = ctx._source.ratings.removeIf(rating -> rating.id == params.id);";
+        Script inline = new Script(ScriptType.INLINE, "painless", script, params);
+
+        UpdateRequest request = EsRequestFactory.createUpdateWithScriptRequest(TRUCK_INDEX, truckId, inline);
+        UpdateResponse response;
+
         try {
-            response = restClient.delete(request, RequestOptions.DEFAULT);
+            response = restClient.update(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error("IOException occured.");
-            return DeleteResultDto.builder()
+            return UpdateResultDto.builder()
                     .result(e.getLocalizedMessage())
                     .build();
         }
 
-        return DeleteResultDto.builder()
+        return UpdateResultDto.builder()
                 .result(response.getResult().name())
                 .build();
     }

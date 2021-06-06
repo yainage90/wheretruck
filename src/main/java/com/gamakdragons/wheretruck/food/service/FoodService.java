@@ -1,17 +1,12 @@
 package com.gamakdragons.wheretruck.food.service;
 
-import com.gamakdragons.wheretruck.common.DeleteResultDto;
-import com.gamakdragons.wheretruck.common.IndexResultDto;
-import com.gamakdragons.wheretruck.common.SearchResultDto;
 import com.gamakdragons.wheretruck.common.UpdateResultDto;
-import com.gamakdragons.wheretruck.food.entity.Food;
+import com.gamakdragons.wheretruck.food.dto.FoodSaveRequestDto;
+import com.gamakdragons.wheretruck.food.dto.FoodUpdateRequestDto;
 
 public interface FoodService {
     
-    Food getById(String id);
-    SearchResultDto<Food> findByTruckId(String truckId);
-
-    IndexResultDto saveFood(Food food);
-    UpdateResultDto updateFood(Food food);
-    DeleteResultDto deleteFood(String id);
+    UpdateResultDto saveFood(String truckId, FoodSaveRequestDto foodSaveRequestDto);
+    UpdateResultDto updateFood(String truckId, FoodUpdateRequestDto foodUpdateRequestDto);
+    UpdateResultDto deleteFood(String truckId, String id);
 }

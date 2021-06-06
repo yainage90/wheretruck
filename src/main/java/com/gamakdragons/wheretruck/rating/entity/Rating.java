@@ -18,4 +18,6 @@ public class Rating {
     private String truckId;
     private int star;
     private String comment;
+    private String createdDate;
+    private String updatedDate;
 }

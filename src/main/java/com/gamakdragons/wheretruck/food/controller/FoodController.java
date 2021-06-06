@@ -1,17 +1,15 @@
 package com.gamakdragons.wheretruck.food.controller;
 
-import com.gamakdragons.wheretruck.common.DeleteResultDto;
-import com.gamakdragons.wheretruck.common.IndexResultDto;
-import com.gamakdragons.wheretruck.common.SearchResultDto;
 import com.gamakdragons.wheretruck.common.UpdateResultDto;
-import com.gamakdragons.wheretruck.food.entity.Food;
+import com.gamakdragons.wheretruck.food.dto.FoodSaveRequestDto;
+import com.gamakdragons.wheretruck.food.dto.FoodUpdateRequestDto;
 import com.gamakdragons.wheretruck.food.service.FoodService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -28,39 +26,25 @@ public class FoodController {
     @Autowired
     private FoodService service;
 
-    @GetMapping("/get/id")
-    public ResponseEntity<Food> getById(String id) {
-        log.info("/food/search/id. id=" + id);
+    @PostMapping("/save/{truckId}")
+    public ResponseEntity<UpdateResultDto> save(@PathVariable String truckId, @RequestBody FoodSaveRequestDto foodSaveRequestDto) {
+        log.info("/food/save.");
 
-        return new ResponseEntity<>(service.getById(id), HttpStatus.OK);
+        return new ResponseEntity<>(service.saveFood(truckId, foodSaveRequestDto), HttpStatus.OK);
     }
 
-    @GetMapping("/search/truckId")
-    public ResponseEntity<SearchResultDto<Food>> getByTruckId(String truckId) {
-        log.info("/food/search/truckId. truckId=" + truckId);
+    @PutMapping("/update/{truckId}")
+    public ResponseEntity<UpdateResultDto> update(@PathVariable String truckId, @RequestBody FoodUpdateRequestDto foodUpdateRequestDto) {
+        log.info("/food/update.");
 
-        return new ResponseEntity<>(service.findByTruckId(truckId), HttpStatus.OK);
+        return new ResponseEntity<>(service.updateFood(truckId, foodUpdateRequestDto), HttpStatus.OK);
     }
 
-    @PostMapping("/save")
-    public ResponseEntity<IndexResultDto> save(@RequestBody Food food) {
-        log.info("/food/save. food=" + food);
-
-        return new ResponseEntity<>(service.saveFood(food), HttpStatus.OK);
-    }
-
-    @PutMapping("/update")
-    public ResponseEntity<UpdateResultDto> update(@RequestBody Food food) {
-        log.info("/food/update. food=" + food);
-
-        return new ResponseEntity<>(service.updateFood(food), HttpStatus.OK);
-    }
-
-    @DeleteMapping("/delete")
-    public ResponseEntity<DeleteResultDto> delete(String id) {
+    @DeleteMapping("/delete/{truckId}/{id}")
+    public ResponseEntity<UpdateResultDto> delete(@PathVariable String truckId, @PathVariable String id) {
         log.info("/food/delete. id=" + id);
 
-        return new ResponseEntity<>(service.deleteFood(id), HttpStatus.OK);
+        return new ResponseEntity<>(service.deleteFood(truckId, id), HttpStatus.OK);
     }
     
 }

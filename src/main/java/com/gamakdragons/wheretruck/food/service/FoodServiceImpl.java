@@ -1,32 +1,23 @@
 package com.gamakdragons.wheretruck.food.service;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import java.util.HashMap;
+import java.util.Map;
 
-import com.gamakdragons.wheretruck.client.ElasticSearchRestClient;
-import com.gamakdragons.wheretruck.common.DeleteResultDto;
-import com.gamakdragons.wheretruck.common.IndexResultDto;
-import com.gamakdragons.wheretruck.common.SearchResultDto;
+import com.gamakdragons.wheretruck.aws.S3Service;
 import com.gamakdragons.wheretruck.common.UpdateResultDto;
+import com.gamakdragons.wheretruck.elasticsearch.service.ElasticSearchServiceImpl;
+import com.gamakdragons.wheretruck.food.dto.FoodSaveRequestDto;
+import com.gamakdragons.wheretruck.food.dto.FoodUpdateRequestDto;
 import com.gamakdragons.wheretruck.food.entity.Food;
 import com.gamakdragons.wheretruck.util.EsRequestFactory;
 import com.google.gson.Gson;
 
-import org.elasticsearch.action.delete.DeleteRequest;
-import org.elasticsearch.action.delete.DeleteResponse;
-import org.elasticsearch.action.get.GetRequest;
-import org.elasticsearch.action.get.GetResponse;
-import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.rest.RestStatus;
+import org.elasticsearch.script.Script;
+import org.elasticsearch.script.ScriptType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -37,98 +28,71 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class FoodServiceImpl implements FoodService {
 
-    @Value("${es.index.food.name}")
-    private String FOOD_INDEX_NAME;
+    @Value("${es.index.truck.name}")
+    private String TRUCK_INDEX;
 
-    private final ElasticSearchRestClient restClient;
+    private final ElasticSearchServiceImpl restClient;
+    private final S3Service s3Service;
 
     @Autowired
-    public FoodServiceImpl(ElasticSearchRestClient restClient) {
+    public FoodServiceImpl(ElasticSearchServiceImpl restClient, S3Service s3Service) {
         this.restClient = restClient;
+        this.s3Service = s3Service;
     }
 
     @Override
-    public Food getById(String id) {
+    public UpdateResultDto saveFood(String truckId, FoodSaveRequestDto foodSaveRequestDto) {
 
-        GetRequest request = EsRequestFactory.createGetRequest(FOOD_INDEX_NAME, id);
-        GetResponse getResponse;
+        Food food = foodSaveRequestDto.toEntity();
+        String foodImageUrl = s3Service.uploadFoodImage(truckId, food.getId(), foodSaveRequestDto.getImage());
+        food.setImageUrl(foodImageUrl);
+        log.info("food: " + food);
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("food", food.toMap());
+
+        String script = "if(ctx._source.foods == null) {ctx._source.foods = new ArrayList();}" + 
+                        "ctx._source.foods.add(params.food);";
+        Script inline = new Script(ScriptType.INLINE, "painless", script, params);
+
+        UpdateRequest request = EsRequestFactory.createUpdateWithScriptRequest(TRUCK_INDEX, truckId, inline);
+
+        UpdateResponse response;
         try {
-            getResponse = restClient.get(request, RequestOptions.DEFAULT);
+            response = restClient.update(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error("IOException occured.");
-            return null;
-        }
-
-        return new Gson().fromJson(getResponse.getSourceAsString(), Food.class);
-    }
-
-    @Override
-    public SearchResultDto<Food> findByTruckId(String truckId) {
-
-        SearchRequest request = EsRequestFactory.createSearchByFieldRequest(FOOD_INDEX_NAME, "truckId", truckId);
-
-        SearchResponse response;
-        try {
-            response = restClient.search(request, RequestOptions.DEFAULT);
-            log.info("total hits: " + response.getHits().getTotalHits());
-        } catch(IOException e) {
-            log.error("IOException occured.");
-            return makeErrorSearhResultDtoFromSearchResponse();
-        }
-
-        return makeSearhResultDtoFromSearchResponse(response);
-
-    }
-
-    private SearchResultDto<Food> makeSearhResultDtoFromSearchResponse(SearchResponse response) {
-        return SearchResultDto.<Food> builder()
-                .status(response.status().name())
-                .numFound((int) response.getHits().getTotalHits().value)
-                .docs(
-                    Arrays.stream(response.getHits().getHits())
-                            .map(hit -> new Gson().fromJson(hit.getSourceAsString(), Food.class))
-                            .collect(Collectors.toList())
-                ).build();
-    }
-
-    private SearchResultDto<Food> makeErrorSearhResultDtoFromSearchResponse() {
-        return SearchResultDto.<Food> builder()
-                .status(RestStatus.INTERNAL_SERVER_ERROR.name())
-                .numFound(0)
-                .docs(Collections.emptyList())
-                .build();
-
-    }
-
-    @Override
-    public IndexResultDto saveFood(Food food) {
-
-        String id = UUID.randomUUID().toString();
-        food.setId(id);
-
-        IndexRequest request = EsRequestFactory.createIndexRequest(FOOD_INDEX_NAME, id, food);
-        IndexResponse response;
-        try {
-            response = restClient.index(request, RequestOptions.DEFAULT);
-        } catch(IOException e) {
-            log.error("IOException occured.");
-            return IndexResultDto.builder()
+            return UpdateResultDto.builder()
                 .result(e.getLocalizedMessage())
                 .build();
 
         }
 
-        return IndexResultDto.builder()
+        return UpdateResultDto.builder()
                 .result(response.getResult().name())
-                .id(id)
+                .id(food.getId())
                 .build();
-
     }
 
     @Override
-    public UpdateResultDto updateFood(Food food) {
+    public UpdateResultDto updateFood(String truckId, FoodUpdateRequestDto foodUpdateRequestDto) {
 
-        UpdateRequest request = EsRequestFactory.createUpdateRequest(FOOD_INDEX_NAME, food.getId(), food);
+        Food food = foodUpdateRequestDto.toEntity();
+        String foodImageUrl = s3Service.uploadFoodImage(truckId, food.getId(), foodUpdateRequestDto.getImage());
+        log.info("image uploaded to s3 bucket. url=" + foodImageUrl);
+        food.setImageUrl(foodImageUrl);
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("food", food.toString());
+
+        String script = "def target = ctx._source.foods.find(food -> food.id == params.food.id);" +
+                           "target.name = params.food.name;" + 
+                           "target.cost = params.food.cost;" +
+                           "target.description = params.food.description;" +
+                           "target.imageUrl = params.food.imageUrl;";
+        Script inline = new Script(ScriptType.INLINE, "painless", script, params);
+
+        UpdateRequest request = EsRequestFactory.createUpdateWithScriptRequest(TRUCK_INDEX, truckId, inline);
         UpdateResponse response;
         try {
             response = restClient.update(request, RequestOptions.DEFAULT);
@@ -141,24 +105,32 @@ public class FoodServiceImpl implements FoodService {
 
         return UpdateResultDto.builder()
                 .result(response.getResult().name())
+                .id(food.getId())
                 .build();
-
     }
     
-    public DeleteResultDto deleteFood(String id) {
+    @Override
+    public UpdateResultDto deleteFood(String truckId, String id) {
 
-        DeleteRequest request = EsRequestFactory.createDeleteByIdRequest(FOOD_INDEX_NAME, id);
-        DeleteResponse response;
+        Map<String, Object> params = new HashMap<>();
+        params.put("id", id);
+
+        String script = "def target = ctx._source.foods.removeIf(food -> food.id == params.id);";
+        Script inline = new Script(ScriptType.INLINE, "painless", script, params);
+
+        UpdateRequest request = EsRequestFactory.createUpdateWithScriptRequest(TRUCK_INDEX, truckId, inline);
+        UpdateResponse response;
+
         try {
-            response = restClient.delete(request, RequestOptions.DEFAULT);
+            response = restClient.update(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error("IOException occured.");
-            return DeleteResultDto.builder()
+            return UpdateResultDto.builder()
                     .result(e.getLocalizedMessage())
                     .build();
         }
 
-        return DeleteResultDto.builder()
+        return UpdateResultDto.builder()
                 .result(response.getResult().name())
                 .build();
        
