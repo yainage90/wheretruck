@@ -1,4 +1,4 @@
-package com.gamakdragons.wheretruck.user.entity;
+package com.gamakdragons.wheretruck.domain.favorite.entity;
 
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -11,11 +11,9 @@ import lombok.ToString;
 @Builder
 @ToString
 @EqualsAndHashCode
-public class User {
+public class Favorite {
     
     private String id;
-    private String email;
-    private String name;
-    private String nickName;
-    private boolean isOwner;
+    private String truckId;
+    private String userId;
 }

@@ -15,20 +15,40 @@ import org.elasticsearch.index.query.GeoDistanceQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.TermQueryBuilder;
 import org.elasticsearch.index.reindex.DeleteByQueryRequest;
+import org.elasticsearch.script.Script;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 public class EsRequestFactory {
-    
+
     public static SearchRequest createSearchAllRequest(String indexName) {
+
         SearchRequest request = new SearchRequest(indexName);
+
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
         searchSourceBuilder.query(QueryBuilders.matchAllQuery());
         searchSourceBuilder.from(0);
         searchSourceBuilder.size(10000);
+
         request.source(searchSourceBuilder);
 
         return request;
     }
+    
+    public static SearchRequest createSearchAllRequest(String indexName, String[] fieldsToInclude, String[] fieldsToExclude) {
+
+        SearchRequest request = new SearchRequest(indexName);
+
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        searchSourceBuilder.query(QueryBuilders.matchAllQuery());
+        searchSourceBuilder.from(0);
+        searchSourceBuilder.size(10000);
+        searchSourceBuilder.fetchSource(fieldsToInclude, fieldsToExclude);
+
+        request.source(searchSourceBuilder);
+
+        return request;
+    }
+
 
     public static SearchRequest createGeoSearchRequest(String indexName, GeoLocation geoLocation, float distance) {
 
@@ -46,6 +66,29 @@ public class EsRequestFactory {
         searchSourceBuilder.query(queryBuilder);
         searchSourceBuilder.from(0);
         searchSourceBuilder.size(10000);
+
+        request.source(searchSourceBuilder);
+
+        return request;
+    }
+    
+    public static SearchRequest createGeoSearchRequest(String indexName, GeoLocation geoLocation, float distance, String[] fieldsToInclude, String[] fieldsToExclude) {
+
+        SearchRequest request = new SearchRequest(indexName);
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+
+        GeoDistanceQueryBuilder geoDistanceQuery = QueryBuilders.geoDistanceQuery("geoLocation");
+        geoDistanceQuery.point(new GeoPoint(geoLocation.getLat(), geoLocation.getLon()));
+        geoDistanceQuery.distance(distance + "km");
+
+        BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery();
+        queryBuilder.must(QueryBuilders.matchAllQuery());
+        queryBuilder.filter(geoDistanceQuery);
+
+        searchSourceBuilder.query(queryBuilder);
+        searchSourceBuilder.from(0);
+        searchSourceBuilder.size(10000);
+        searchSourceBuilder.fetchSource(fieldsToInclude, fieldsToExclude);
 
         request.source(searchSourceBuilder);
 
@@ -73,6 +116,34 @@ public class EsRequestFactory {
         searchSourceBuilder.query(queryBuilder);
         searchSourceBuilder.from(0);
         searchSourceBuilder.size(10000);
+
+        request.source(searchSourceBuilder);
+
+        return request;
+    }
+
+    public static SearchRequest createAddressSearchRequest(String indexName, String city, String town, String[] fieldsToInclude, String[] fieldsToExclude) {
+
+        SearchRequest request = new SearchRequest(indexName);
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        
+        BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery();
+        
+        if(city != null && city.trim().length() > 0) {
+            TermQueryBuilder cityQuery = QueryBuilders.termQuery("city", city);
+            queryBuilder.must(cityQuery);
+
+        }
+
+        if(town != null && town.trim().length() > 0) {
+            TermQueryBuilder townQuery = QueryBuilders.termQuery("town", town); 
+            queryBuilder.filter(townQuery);
+        }
+
+        searchSourceBuilder.query(queryBuilder);
+        searchSourceBuilder.from(0);
+        searchSourceBuilder.size(10000);
+        searchSourceBuilder.fetchSource(fieldsToInclude, fieldsToExclude);
 
         request.source(searchSourceBuilder);
 
@@ -128,6 +199,15 @@ public class EsRequestFactory {
         request.setMaxRetries(3);
 
         return request;
+    }
+
+    public static UpdateRequest createUpdateWithScriptRequest(String index, String id, Script inline) {
+
+        UpdateRequest request = new UpdateRequest(index, id);
+        request.script(inline);
+
+        return request;
+
     }
 
 }

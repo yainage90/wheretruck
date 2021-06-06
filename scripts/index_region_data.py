@@ -4,10 +4,9 @@ import requests
 from datetime import datetime
 from elasticsearch import Elasticsearch
 
+import argparse
 
-url='https://www.data.go.kr/download/15028208/standard.do?dataType=json'
-response=requests.get(url)
-records=response.json()['records']
+from requests.auth import HTTPBasicAuth 
 
 def make_doc(obj):
 	
@@ -60,13 +59,30 @@ def make_doc(obj):
 	return doc
 
 
-es = Elasticsearch('http://ec2-13-209-181-246.ap-northeast-2.compute.amazonaws.com:9200')
-index='region'
 
-def index_doc(doc):
+def index_doc(index, doc):
 	es.index(index=index, body=doc)
 
-for obj in records:
-	doc=make_doc(obj)
-	print(doc)
-	index_doc(doc)
+
+if __name__ == "__main__":
+
+	url='https://www.data.go.kr/download/15028208/standard.do?dataType=json'
+	response=requests.get(url)
+	records=response.json()['records']
+
+	parser = argparse.ArgumentParser()
+	parser.add_argument('--user', help='elasticsearch username is needed')
+	parser.add_argument('--password', help='elasticsearch password is need')
+
+	args = parser.parse_args()
+
+	USER=args.user
+	PASSWORD=args.password
+
+	es = Elasticsearch('http://ec2-13-209-181-246.ap-northeast-2.compute.amazonaws.com:9200', http_auth=(USER, PASSWORD))
+	index='region'
+
+	for obj in records:
+		doc=make_doc(obj)
+		print(doc)
+		index_doc(index, doc)

@@ -1,16 +1,16 @@
-package com.gamakdragons.wheretruck.user.service;
+package com.gamakdragons.wheretruck.domain.favorite.service;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import com.gamakdragons.wheretruck.cloud.elasticsearch.service.ElasticSearchServiceImpl;
 import com.gamakdragons.wheretruck.common.DeleteResultDto;
 import com.gamakdragons.wheretruck.common.IndexResultDto;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
-import com.gamakdragons.wheretruck.common.UpdateResultDto;
-import com.gamakdragons.wheretruck.user.entity.User;
+import com.gamakdragons.wheretruck.domain.favorite.entity.Favorite;
 import com.gamakdragons.wheretruck.util.EsRequestFactory;
 import com.google.gson.Gson;
 
@@ -22,56 +22,31 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.update.UpdateRequest;
-import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.rest.RestStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
 
 import lombok.extern.slf4j.Slf4j;
 
-@Service
+//@Service
 @Slf4j
-public class UserServiceImpl implements UserService {
+public class FavoriteServiceImpl implements FavoriteService {
 
-    @Value("${elasticsearch.index.user.name}")
-    private String USER_INDEX_NAME;
-
-    @Value("${elasticsearch.index.truck.name}")
-    private String TRUCK_INDEX_NAME;
+    @Value("${elasticsearch.index.favorite.name}")
+    private String FAVORITE_INDEX_NAME;
 
     private final ElasticSearchServiceImpl restClient;
 
     @Autowired
-    public UserServiceImpl (ElasticSearchServiceImpl restClient) {
+    public FavoriteServiceImpl (ElasticSearchServiceImpl restClient) {
         this.restClient = restClient;
     }
 
     @Override
-    public SearchResultDto<User> findAll() {
+    public Favorite getById(String id) {
 
-        SearchRequest request = EsRequestFactory.createSearchAllRequest(USER_INDEX_NAME); 
-
-        SearchResponse response;
-        try {
-            response = restClient.search(request, RequestOptions.DEFAULT);
-            log.info("total hits: " + response.getHits().getTotalHits());
-        } catch(IOException e) {
-            log.error("IOException occured.");
-            return makeErrorSearhResultDtoFromSearchResponse();
-        }
-
-        return makeSearhResultDtoFromSearchResponse(response);
-    }
-
-
-
-    @Override
-    public User getById(String id) {
-
-        GetRequest request = EsRequestFactory.createGetRequest(USER_INDEX_NAME, id);
+        GetRequest request = EsRequestFactory.createGetRequest(FAVORITE_INDEX_NAME, id);
         GetResponse getResponse;
         try {
             getResponse = restClient.get(request, RequestOptions.DEFAULT);
@@ -80,13 +55,14 @@ public class UserServiceImpl implements UserService {
             return null;
         }
 
-        return new Gson().fromJson(getResponse.getSourceAsString(), User.class);
+        return new Gson().fromJson(getResponse.getSourceAsString(), Favorite.class);
+
     }
 
     @Override
-    public SearchResultDto<User> findByEmail(String email) {
+    public SearchResultDto<Favorite> findAll() {
 
-        SearchRequest request = EsRequestFactory.createSearchByFieldRequest(USER_INDEX_NAME, "email", email);
+        SearchRequest request = EsRequestFactory.createSearchAllRequest(FAVORITE_INDEX_NAME); 
 
         SearchResponse response;
         try {
@@ -101,19 +77,55 @@ public class UserServiceImpl implements UserService {
 
     }
 
-    private SearchResultDto<User> makeSearhResultDtoFromSearchResponse(SearchResponse response) {
-        return SearchResultDto.<User> builder()
+    @Override
+    public SearchResultDto<Favorite> findByTruckId(String truckId) {
+
+        SearchRequest request = EsRequestFactory.createSearchByFieldRequest(FAVORITE_INDEX_NAME, "truckId", truckId);
+
+        SearchResponse response;
+        try {
+            response = restClient.search(request, RequestOptions.DEFAULT);
+            log.info("total hits: " + response.getHits().getTotalHits());
+        } catch(IOException e) {
+            log.error("IOException occured.");
+            return makeErrorSearhResultDtoFromSearchResponse();
+        }
+
+        return makeSearhResultDtoFromSearchResponse(response);
+
+    }
+
+    @Override
+    public SearchResultDto<Favorite> findByUserId(String userId) {
+
+        SearchRequest request = EsRequestFactory.createSearchByFieldRequest(FAVORITE_INDEX_NAME, "userId", userId);
+
+        SearchResponse response;
+        try {
+            response = restClient.search(request, RequestOptions.DEFAULT);
+            log.info("total hits: " + response.getHits().getTotalHits());
+        } catch(IOException e) {
+            log.error("IOException occured.");
+            return makeErrorSearhResultDtoFromSearchResponse();
+        }
+
+        return makeSearhResultDtoFromSearchResponse(response);
+
+    }
+
+    private SearchResultDto<Favorite> makeSearhResultDtoFromSearchResponse(SearchResponse response) {
+        return SearchResultDto.<Favorite> builder()
                 .status(response.status().name())
                 .numFound((int) response.getHits().getTotalHits().value)
                 .docs(
                     Arrays.stream(response.getHits().getHits())
-                            .map(hit -> new Gson().fromJson(hit.getSourceAsString(), User.class))
+                            .map(hit -> new Gson().fromJson(hit.getSourceAsString(), Favorite.class))
                             .collect(Collectors.toList())
                 ).build();
     }
 
-    private SearchResultDto<User> makeErrorSearhResultDtoFromSearchResponse() {
-        return SearchResultDto.<User> builder()
+    private SearchResultDto<Favorite> makeErrorSearhResultDtoFromSearchResponse() {
+        return SearchResultDto.<Favorite> builder()
                 .status(RestStatus.INTERNAL_SERVER_ERROR.name())
                 .numFound(0)
                 .docs(Collections.emptyList())
@@ -122,9 +134,12 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public IndexResultDto saveUser(User user) {
+    public IndexResultDto saveFavorite(Favorite favorite) {
 
-        IndexRequest request = EsRequestFactory.createIndexRequest(USER_INDEX_NAME, user.getId(), user);
+        String id = UUID.randomUUID().toString();
+        favorite.setId(id);
+
+        IndexRequest request = EsRequestFactory.createIndexRequest(FAVORITE_INDEX_NAME, favorite.getId(), favorite);
         IndexResponse response;
         try {
             response = restClient.index(request, RequestOptions.DEFAULT);
@@ -144,29 +159,9 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UpdateResultDto updateUser(User user) {
+    public DeleteResultDto deleteFavorite(String id) {
 
-        UpdateRequest request = EsRequestFactory.createUpdateRequest(USER_INDEX_NAME, user.getId(), user);
-        UpdateResponse response;
-        try {
-            response = restClient.update(request, RequestOptions.DEFAULT);
-        } catch(IOException e) {
-            log.error("IOException occured.");
-            return UpdateResultDto.builder()
-                .result(e.getLocalizedMessage())
-                .build();
-        }
-
-        return UpdateResultDto.builder()
-                .result(response.getResult().name())
-                .build();
-
-    }
-
-    @Override
-    public DeleteResultDto deleteUser(String id) {
-
-        DeleteRequest request = EsRequestFactory.createDeleteByIdRequest(USER_INDEX_NAME, id);
+        DeleteRequest request = EsRequestFactory.createDeleteByIdRequest(FAVORITE_INDEX_NAME, id);
         DeleteResponse response;
         try {
             response = restClient.delete(request, RequestOptions.DEFAULT);
@@ -182,5 +177,4 @@ public class UserServiceImpl implements UserService {
                 .build();
 
     }
-
 }

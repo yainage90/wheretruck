@@ -35,3 +35,7 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### credential fiels###
+*-aws.yml
+*-elasticsearch.yml

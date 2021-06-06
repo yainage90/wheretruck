@@ -1,4 +1,4 @@
-package com.gamakdragons.wheretruck.user.service;
+package com.gamakdragons.wheretruck.domain.favorite.service;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -13,8 +13,7 @@ import com.gamakdragons.wheretruck.cloud.elasticsearch.service.ElasticSearchServ
 import com.gamakdragons.wheretruck.common.DeleteResultDto;
 import com.gamakdragons.wheretruck.common.IndexResultDto;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
-import com.gamakdragons.wheretruck.common.UpdateResultDto;
-import com.gamakdragons.wheretruck.user.entity.User;
+import com.gamakdragons.wheretruck.domain.favorite.entity.Favorite;
 
 import org.apache.http.HttpHost;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
@@ -38,16 +37,16 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import lombok.extern.slf4j.Slf4j;
 
-@SpringBootTest(classes = {UserServiceImpl.class, ElasticSearchServiceImpl.class}, 
+@SpringBootTest(classes = {FavoriteServiceImpl.class, ElasticSearchServiceImpl.class}, 
                 properties = {"spring.config.location=classpath:application-test.yml"})
 @Slf4j
-public class UserServiceImplTest {
+public class FavoriteServiceImplTest {
 
     @Autowired
-    private UserService service;
+    private FavoriteService service;
     
-    @Value("${elasticsearch.index.user.name}")
-    private String TEST_USER_INDEX_NAME;
+    @Value("${elasticsearch.index.favorite.name}")
+    private String TEST_FAVORITE_INDEX_NAME;
 
     @Value("${elasticsearch.host}")
     private String ES_HOST;
@@ -57,7 +56,7 @@ public class UserServiceImplTest {
 
     private RestHighLevelClient esClient;
 
-    private User user;
+    private Favorite favorite;
 
     @BeforeEach
     public void beforeEach() throws IOException {
@@ -73,13 +72,14 @@ public class UserServiceImplTest {
         deleteTestUserIndex();
     }
 
+
     @Test
-    void testFindAll() {
+    void testDeleteFavorite() {
 
-        IndexResultDto indexResult = service.saveUser(user);
-        log.info("user index result: " + indexResult.getResult() + ", user id: " + indexResult.getId());
+        IndexResultDto indexResult = service.saveFavorite(favorite);
+        log.info("favorite index result: " + indexResult.getResult() + ", favorite id: " + indexResult.getId());
 
-        assertThat(indexResult.getId(), is(user.getId()));
+        assertThat(indexResult.getResult(), is("CREATED"));
 
         try {
             Thread.sleep(2000);
@@ -87,22 +87,42 @@ public class UserServiceImplTest {
             e.printStackTrace();
         }
 
-        SearchResultDto<User> result = service.findAll();
+        DeleteResultDto deleteResult = service.deleteFavorite(favorite.getId());
+
+        assertThat(deleteResult.getResult(), is("DELETED"));
+        assertThat(service.getById(favorite.getId()), nullValue());
+
+    }
+
+    @Test
+    void testFindAll() {
+
+        IndexResultDto indexResult = service.saveFavorite(favorite);
+        log.info("favorite index result: " + indexResult.getResult() + ", favorite id: " + indexResult.getId());
+
+        assertThat(indexResult.getId(), is(favorite.getId()));
+
+        try {
+            Thread.sleep(2000);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        SearchResultDto<Favorite> result = service.findAll();
         log.info(result.toString());
 
         
         assertThat(result.getStatus(), is("OK"));
         assertThat(result.getNumFound(), is(1L));
 
-        assertThat(result.getDocs(), hasItems(user));
+        assertThat(result.getDocs(), hasItems(favorite));
 
     }
 
     @Test
-    void testDeleteUser() {
-
-        IndexResultDto indexResult = service.saveUser(user);
-        log.info("user index result: " + indexResult.getResult() + ", user id: " + indexResult.getId());
+    void testFindByTruckId() {
+        IndexResultDto indexResult = service.saveFavorite(favorite);
+        log.info("favorite index result: " + indexResult.getResult() + ", favorite id: " + indexResult.getId());
 
         assertThat(indexResult.getResult(), is("CREATED"));
 
@@ -112,18 +132,20 @@ public class UserServiceImplTest {
             e.printStackTrace();
         }
 
-        DeleteResultDto deleteResult = service.deleteUser(user.getId());
+        SearchResultDto<Favorite> resultFavorite = service.findByTruckId(favorite.getTruckId());
+        log.info(resultFavorite.toString());
 
-        assertThat(deleteResult.getResult(), is("DELETED"));
-        assertThat(service.getById(user.getId()), nullValue());
+        assertThat(resultFavorite.getStatus(), equalTo("OK"));
+        assertThat(resultFavorite.getNumFound(), equalTo(1L));
+        assertThat(resultFavorite.getDocs().get(0), equalTo(favorite));
 
     }
 
     @Test
-    void testFindByEmail() {
+    void testFindByUserId() {
 
-        IndexResultDto indexResult = service.saveUser(user);
-        log.info("user index result: " + indexResult.getResult() + ", user id: " + indexResult.getId());
+        IndexResultDto indexResult = service.saveFavorite(favorite);
+        log.info("favorite index result: " + indexResult.getResult() + ", favorite id: " + indexResult.getId());
 
         assertThat(indexResult.getResult(), is("CREATED"));
 
@@ -133,20 +155,20 @@ public class UserServiceImplTest {
             e.printStackTrace();
         }
 
-        SearchResultDto<User> resultUser = service.findByEmail(user.getEmail());
-        log.info(resultUser.toString());
+        SearchResultDto<Favorite> resultFavorite = service.findByUserId(favorite.getUserId());
+        log.info(resultFavorite.toString());
 
-        assertThat(resultUser.getStatus(), equalTo("OK"));
-        assertThat(resultUser.getNumFound(), equalTo(1L));
-        assertThat(resultUser.getDocs().get(0), equalTo(user));
+        assertThat(resultFavorite.getStatus(), equalTo("OK"));
+        assertThat(resultFavorite.getNumFound(), equalTo(1L));
+        assertThat(resultFavorite.getDocs().get(0), equalTo(favorite));
 
     }
 
     @Test
     void testGetById() {
 
-        IndexResultDto indexResult = service.saveUser(user);
-        log.info("user index result: " + indexResult.getResult() + ", user id: " + indexResult.getId());
+        IndexResultDto indexResult = service.saveFavorite(favorite);
+        log.info("favorite index result: " + indexResult.getResult() + ", favorite id: " + indexResult.getId());
 
         assertThat(indexResult.getResult(), is("CREATED"));
 
@@ -156,43 +178,20 @@ public class UserServiceImplTest {
             e.printStackTrace();
         }
 
-        User resultUser = service.getById(user.getId());
-        log.info(resultUser.toString());
-        assertThat(resultUser, equalTo(user));
+        Favorite resultFavorite = service.getById(favorite.getId());
+        log.info(resultFavorite.toString());
+        assertThat(resultFavorite, equalTo(favorite));
 
     }
 
     @Test
-    void testSaveUser() {
+    void testSaveFavorite() {
 
-        IndexResultDto indexResult = service.saveUser(user);
-        log.info("user index result: " + indexResult.getResult() + ", user id: " + indexResult.getId());
-
-        assertThat(indexResult.getResult(), is("CREATED"));
-        assertThat(indexResult.getId(), is(user.getId()));
-
-    }
-
-    @Test
-    void testUpdateUser() {
-
-        IndexResultDto indexResult = service.saveUser(user);
-        log.info("user index result: " + indexResult.getResult() + ", user id: " + indexResult.getId());
+        IndexResultDto indexResult = service.saveFavorite(favorite);
+        log.info("favorite index result: " + indexResult.getResult() + ", favorite id: " + indexResult.getId());
 
         assertThat(indexResult.getResult(), is("CREATED"));
-
-        try {
-            Thread.sleep(2000);
-        } catch(InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        String emailToUpdate = "goodbye@xyz.net";
-        user.setEmail(emailToUpdate);
-        UpdateResultDto updateResult = service.updateUser(user);
-
-        assertThat(updateResult.getResult(), is("UPDATED"));
-        assertThat(service.getById(user.getId()).getEmail(), equalTo(emailToUpdate));
+        assertThat(indexResult.getId(), is(favorite.getId()));
 
     }
 
@@ -206,7 +205,7 @@ public class UserServiceImplTest {
 
     private void createTestUserIndex() throws IOException {
 
-        CreateIndexRequest request = new CreateIndexRequest(TEST_USER_INDEX_NAME);
+        CreateIndexRequest request = new CreateIndexRequest(TEST_FAVORITE_INDEX_NAME);
 
         request.settings(Settings.builder()
             .put("index.number_of_shards", 3)
@@ -224,24 +223,17 @@ public class UserServiceImplTest {
                 }
                 builder.endObject();
 
-                builder.startObject("email");
+                builder.startObject("userId");
                 {
                     builder.field("type", "keyword");
                 }
                 builder.endObject();
 
-                builder.startObject("name");
+                builder.startObject("truckId");
                 {
                     builder.field("type", "keyword");
                 }
                 builder.endObject();
-
-                builder.startObject("nickName");
-                {
-                    builder.field("type", "keyword");
-                }
-                builder.endObject();
-
             }
             builder.endObject();
         }
@@ -264,19 +256,18 @@ public class UserServiceImplTest {
 
     private void createTestUserData() {
 
-        user = User.builder()
+        favorite = Favorite.builder()
                             .id(UUID.randomUUID().toString())
-                            .email("hello@xyz.com")
-                            .name("두한이")
-                            .nickName("잇뽕")
+                            .userId("userid")
+                            .truckId("truckid")
                             .build();
 
     }
 
     private void deleteTestUserIndex() throws IOException {
-        GetIndexRequest getIndexRequest = new GetIndexRequest(TEST_USER_INDEX_NAME);
+        GetIndexRequest getIndexRequest = new GetIndexRequest(TEST_FAVORITE_INDEX_NAME);
         if(esClient.indices().exists(getIndexRequest, RequestOptions.DEFAULT)) {
-            DeleteIndexRequest request = new DeleteIndexRequest(TEST_USER_INDEX_NAME);
+            DeleteIndexRequest request = new DeleteIndexRequest(TEST_FAVORITE_INDEX_NAME);
             AcknowledgedResponse response = esClient.indices().delete(request, RequestOptions.DEFAULT);
             log.info("index deleted: " + response.isAcknowledged());
             if(!response.isAcknowledged()) {
