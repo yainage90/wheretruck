@@ -5,7 +5,6 @@ import java.util.List;
 import com.gamakdragons.wheretruck.common.GeoLocation;
 import com.gamakdragons.wheretruck.food.entity.Food;
 import com.gamakdragons.wheretruck.rating.entity.Rating;
-import com.gamakdragons.wheretruck.truck.dto.TruckGetResponseDto;
 
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -27,22 +26,8 @@ public class Truck {
     private boolean opened;
     private String userId;
     private int numRating;
-    private float score;
-
-    public TruckGetResponseDto toGetResponseDto(List<Food> foods, List<Rating> ratings) {
-
-        return TruckGetResponseDto.builder()
-                .id(getId())
-                .name(getName())
-                .geoLocation(getGeoLocation())
-                .description(getDescription())
-                .opened(isOpened())
-                .userId(getUserId())
-                .numRating(getNumRating())
-                .score(getScore())
-                .foods(foods)
-                .ratings(ratings)
-                .build();
-    }
+    private float starAvg;
+    private List<Food> foods;
+    private List<Rating> ratings;
 
 }

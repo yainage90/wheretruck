@@ -21,6 +21,4 @@ public interface TruckService {
 
     UpdateResultDto openTruck(String id, GeoLocation location);
     UpdateResultDto stopTruck(String id);
-
-    void updateRating(String truckId);
 }

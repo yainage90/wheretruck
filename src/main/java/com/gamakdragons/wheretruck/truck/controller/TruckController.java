@@ -1,17 +1,10 @@
 package com.gamakdragons.wheretruck.truck.controller;
 
-import java.util.List;
-
 import com.gamakdragons.wheretruck.common.DeleteResultDto;
 import com.gamakdragons.wheretruck.common.GeoLocation;
 import com.gamakdragons.wheretruck.common.IndexResultDto;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
 import com.gamakdragons.wheretruck.common.UpdateResultDto;
-import com.gamakdragons.wheretruck.food.entity.Food;
-import com.gamakdragons.wheretruck.food.service.FoodService;
-import com.gamakdragons.wheretruck.rating.entity.Rating;
-import com.gamakdragons.wheretruck.rating.service.RatingService;
-import com.gamakdragons.wheretruck.truck.dto.TruckGetResponseDto;
 import com.gamakdragons.wheretruck.truck.entity.Truck;
 import com.gamakdragons.wheretruck.truck.service.TruckService;
 
@@ -36,12 +29,6 @@ public class TruckController {
     @Autowired
     private TruckService truckService;
 
-    @Autowired
-    private FoodService foodService;
-    
-    @Autowired
-    private RatingService ratingService;
-    
     @GetMapping("/search/all" )
     public ResponseEntity<SearchResultDto<Truck>> getAllTrucks() {
         log.info("/truck/search/all");
@@ -64,14 +51,12 @@ public class TruckController {
     }
 
     @GetMapping("/get/id")
-    public ResponseEntity<TruckGetResponseDto> getById(String id) {
+    public ResponseEntity<Truck> getById(String id) {
         log.info("/truck/search/id. id=" + id);
 
         Truck truck = truckService.getById(id);
-        List<Food> foods = foodService.findByTruckId(id).getDocs();
-        List<Rating> ratings = ratingService.findByTruckId(id).getDocs();
 
-        return new ResponseEntity<>(truck.toGetResponseDto(foods, ratings), HttpStatus.OK);
+        return new ResponseEntity<>(truck, HttpStatus.OK);
     }
 
     @PostMapping("/save")
