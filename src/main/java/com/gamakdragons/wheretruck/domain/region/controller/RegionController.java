@@ -24,21 +24,21 @@ public class RegionController {
     @Autowired
     private RegionService service;
 
-    @GetMapping("/search/all")
+    @GetMapping("/all")
     public ResponseEntity<SearchResultDto<Region>> allRegions() {
         log.info("/region/all");
 
         return new ResponseEntity<>(service.findAll(), HttpStatus.OK);
     }
 
-    @GetMapping("/search/geo")
+    @GetMapping("/geo")
     public ResponseEntity<SearchResultDto<Region>> getRegionsByDistance(GeoLocation location, float distance) {
         log.info("/region/geo. geoLocation=" + location + ", distance=" + distance);
 
         return new ResponseEntity<>(service.findByLocation(location, distance), HttpStatus.OK);
     }
 
-    @GetMapping("/search/address")
+    @GetMapping("/address")
     public ResponseEntity<SearchResultDto<Region>> getRegionsByAddress(@Nullable String city, @Nullable String town) {
         log.info("/region/address. city=" + city + ", town=" + town);
 
