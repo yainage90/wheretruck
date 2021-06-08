@@ -1,14 +1,13 @@
 package com.gamakdragons.wheretruck.user.service;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.stream.Collectors;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.gamakdragons.wheretruck.cloud.elasticsearch.service.ElasticSearchServiceImpl;
 import com.gamakdragons.wheretruck.common.DeleteResultDto;
 import com.gamakdragons.wheretruck.common.IndexResultDto;
-import com.gamakdragons.wheretruck.common.SearchResultDto;
 import com.gamakdragons.wheretruck.common.UpdateResultDto;
 import com.gamakdragons.wheretruck.user.entity.User;
 import com.gamakdragons.wheretruck.util.EsRequestFactory;
@@ -20,58 +19,31 @@ import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.rest.RestStatus;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.elasticsearch.script.Script;
+import org.elasticsearch.script.ScriptType;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
     @Value("${elasticsearch.index.user.name}")
-    private String USER_INDEX_NAME;
-
-    @Value("${elasticsearch.index.truck.name}")
-    private String TRUCK_INDEX_NAME;
+    private String USER_INDEX;
 
     private final ElasticSearchServiceImpl restClient;
-
-    @Autowired
-    public UserServiceImpl (ElasticSearchServiceImpl restClient) {
-        this.restClient = restClient;
-    }
-
-    @Override
-    public SearchResultDto<User> findAll() {
-
-        SearchRequest request = EsRequestFactory.createSearchAllRequest(USER_INDEX_NAME); 
-
-        SearchResponse response;
-        try {
-            response = restClient.search(request, RequestOptions.DEFAULT);
-            log.info("total hits: " + response.getHits().getTotalHits());
-        } catch(IOException e) {
-            log.error("IOException occured.");
-            return makeErrorSearhResultDtoFromSearchResponse();
-        }
-
-        return makeSearhResultDtoFromSearchResponse(response);
-    }
-
-
 
     @Override
     public User getById(String id) {
 
-        GetRequest request = EsRequestFactory.createGetRequest(USER_INDEX_NAME, id);
+        GetRequest request = EsRequestFactory.createGetRequest(USER_INDEX, id);
         GetResponse getResponse;
         try {
             getResponse = restClient.get(request, RequestOptions.DEFAULT);
@@ -84,47 +56,11 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public SearchResultDto<User> findByEmail(String email) {
-
-        SearchRequest request = EsRequestFactory.createSearchByFieldRequest(USER_INDEX_NAME, "email", email);
-
-        SearchResponse response;
-        try {
-            response = restClient.search(request, RequestOptions.DEFAULT);
-            log.info("total hits: " + response.getHits().getTotalHits());
-        } catch(IOException e) {
-            log.error("IOException occured.");
-            return makeErrorSearhResultDtoFromSearchResponse();
-        }
-
-        return makeSearhResultDtoFromSearchResponse(response);
-
-    }
-
-    private SearchResultDto<User> makeSearhResultDtoFromSearchResponse(SearchResponse response) {
-        return SearchResultDto.<User> builder()
-                .status(response.status().name())
-                .numFound((int) response.getHits().getTotalHits().value)
-                .docs(
-                    Arrays.stream(response.getHits().getHits())
-                            .map(hit -> new Gson().fromJson(hit.getSourceAsString(), User.class))
-                            .collect(Collectors.toList())
-                ).build();
-    }
-
-    private SearchResultDto<User> makeErrorSearhResultDtoFromSearchResponse() {
-        return SearchResultDto.<User> builder()
-                .status(RestStatus.INTERNAL_SERVER_ERROR.name())
-                .numFound(0)
-                .docs(Collections.emptyList())
-                .build();
-
-    }
-
-    @Override
     public IndexResultDto saveUser(User user) {
 
-        IndexRequest request = EsRequestFactory.createIndexRequest(USER_INDEX_NAME, user.getId(), user);
+        user.setFavorites(Collections.emptyList());
+
+        IndexRequest request = EsRequestFactory.createIndexRequest(USER_INDEX, user.getId(), user);
         IndexResponse response;
         try {
             response = restClient.index(request, RequestOptions.DEFAULT);
@@ -146,7 +82,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UpdateResultDto updateUser(User user) {
 
-        UpdateRequest request = EsRequestFactory.createUpdateRequest(USER_INDEX_NAME, user.getId(), user);
+        UpdateRequest request = EsRequestFactory.createUpdateRequest(USER_INDEX, user.getId(), user);
         UpdateResponse response;
         try {
             response = restClient.update(request, RequestOptions.DEFAULT);
@@ -166,7 +102,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public DeleteResultDto deleteUser(String id) {
 
-        DeleteRequest request = EsRequestFactory.createDeleteByIdRequest(USER_INDEX_NAME, id);
+        DeleteRequest request = EsRequestFactory.createDeleteByIdRequest(USER_INDEX, id);
         DeleteResponse response;
         try {
             response = restClient.delete(request, RequestOptions.DEFAULT);
@@ -181,6 +117,63 @@ public class UserServiceImpl implements UserService {
                 .result(response.getResult().name())
                 .build();
 
+    }
+
+
+    @Override
+    public UpdateResultDto addFavorite(String userId, String truckId) {
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("truckId", truckId);
+
+        String script = "if(ctx._source.favorites == null) {ctx._source.favorites = new ArrayList();}" + 
+                        "ctx._source.favorites.add(params.truckId);";
+        Script inline = new Script(ScriptType.INLINE, "painless", script, params);
+
+        UpdateRequest request = EsRequestFactory.createUpdateWithScriptRequest(USER_INDEX, userId, inline);
+
+        UpdateResponse response;
+        try {
+            response = restClient.update(request, RequestOptions.DEFAULT);
+        } catch(IOException e) {
+            log.error("IOException occured.");
+            return UpdateResultDto.builder()
+                .result(e.getLocalizedMessage())
+                .build();
+
+        }
+
+        return UpdateResultDto.builder()
+                .result(response.getResult().name())
+                .build();
+    }
+
+
+    @Override
+    public UpdateResultDto deleteFavorite(String userId, String truckId) {
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("truckId", truckId);
+
+        String script = "ctx._source.favorites.removeIf(truckId -> truckId == params.truckId);";
+        Script inline = new Script(ScriptType.INLINE, "painless", script, params);
+
+        UpdateRequest request = EsRequestFactory.createUpdateWithScriptRequest(USER_INDEX, userId, inline);
+        UpdateResponse response;
+
+        try {
+            response = restClient.update(request, RequestOptions.DEFAULT);
+        } catch(IOException e) {
+            log.error("IOException occured.");
+            return UpdateResultDto.builder()
+                    .result(e.getLocalizedMessage())
+                    .build();
+        }
+
+        return UpdateResultDto.builder()
+                .result(response.getResult().name())
+                .build();
+       
     }
 
 }
