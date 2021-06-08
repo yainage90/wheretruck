@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -65,7 +66,10 @@ public class TruckServiceImpl implements TruckService {
             return null;
         }
 
-        return new Gson().fromJson(getResponse.getSourceAsString(), Truck.class);
+        Truck truck = new Gson().fromJson(getResponse.getSourceAsString(), Truck.class);
+        truck.setRatings(truck.getRatings().stream().sorted((r1, r2) -> r2.getCreatedDate().compareTo(r1.getCreatedDate())).collect(Collectors.toList()));
+
+        return truck;
     }
 
     @Override
@@ -124,14 +128,18 @@ public class TruckServiceImpl implements TruckService {
     }
 
     private SearchResultDto<Truck> makeSearhResultDtoFromSearchResponse(SearchResponse response) {
+        List<Truck> trucks = Arrays.stream(response.getHits().getHits())
+                            .map(hit -> new Gson().fromJson(hit.getSourceAsString(), Truck.class))
+                            .collect(Collectors.toList());
+        
+        trucks.stream().filter(truck -> truck.getRatings() != null).forEach(truck -> {
+            truck.setRatings(truck.getRatings().stream().sorted((r1, r2) -> r2.getCreatedDate().compareTo(r1.getCreatedDate())).collect(Collectors.toList()));
+        });
+
         return SearchResultDto.<Truck> builder()
                 .status(response.status().name())
                 .numFound((int) response.getHits().getTotalHits().value)
-                .docs(
-                    Arrays.stream(response.getHits().getHits())
-                            .map(hit -> new Gson().fromJson(hit.getSourceAsString(), Truck.class))
-                            .collect(Collectors.toList())
-                ).build();
+                .docs(trucks).build();
     }
 
     private SearchResultDto<Truck> makeErrorSearhResultDtoFromSearchResponse() {

@@ -30,53 +30,53 @@ public class TruckController {
     @Autowired
     private TruckService truckService;
 
-    @GetMapping("/search/all" )
-    public ResponseEntity<SearchResultDto<Truck>> getAllTrucks() {
-        log.info("/truck/search/all");
-
-        return new ResponseEntity<>(truckService.findAll(), HttpStatus.OK);
-    }
-
-    @GetMapping("/search/geo")
-    public ResponseEntity<SearchResultDto<Truck>> getByGeoLocation(GeoLocation location, float distance) {
-        log.info("/truck/search/geo. geoLocation=" + location + ", distance=" + distance);
-
-        return new ResponseEntity<>(truckService.findByGeoLocation(location, distance), HttpStatus.OK);
-    }
-
-    @GetMapping("/search/userId")
-    public ResponseEntity<SearchResultDto<Truck>> getByUserId(String userId) {
-        log.info("/truck/search/userId. userId=" + userId);
-
-        return new ResponseEntity<>(truckService.findByUserId(userId), HttpStatus.OK);
-    }
-
-    @GetMapping("/get/id")
-    public ResponseEntity<Truck> getById(String id) {
-        log.info("/truck/search/id. id=" + id);
+    @GetMapping("/{id}")
+    public ResponseEntity<Truck> getById(@PathVariable String id) {
+        log.info("/truck/" + id);
 
         Truck truck = truckService.getById(id);
 
         return new ResponseEntity<>(truck, HttpStatus.OK);
     }
 
-    @PostMapping("/save")
+    @GetMapping("/all" )
+    public ResponseEntity<SearchResultDto<Truck>> getAllTrucks() {
+        log.info("/truck/all");
+
+        return new ResponseEntity<>(truckService.findAll(), HttpStatus.OK);
+    }
+
+    @GetMapping("/geo")
+    public ResponseEntity<SearchResultDto<Truck>> getByGeoLocation(GeoLocation location, float distance) {
+        log.info("/truck/geo. geoLocation=" + location + ", distance=" + distance);
+
+        return new ResponseEntity<>(truckService.findByGeoLocation(location, distance), HttpStatus.OK);
+    }
+
+    @GetMapping("/user")
+    public ResponseEntity<SearchResultDto<Truck>> getByUserId(String userId) {
+        log.info("/truck/user. userId=" + userId);
+
+        return new ResponseEntity<>(truckService.findByUserId(userId), HttpStatus.OK);
+    }
+
+    @PostMapping
     public ResponseEntity<IndexResultDto> save(@RequestBody Truck truck) {
-        log.info("/truck/save. dto=" + truck);
+        log.info("truck=" + truck);
 
         return new ResponseEntity<>(truckService.saveTruck(truck), HttpStatus.OK);
     }
 
-    @PutMapping("/update")
+    @PutMapping
     public ResponseEntity<UpdateResultDto> update(@RequestBody Truck truck) {
-        log.info("/truck/update. truck=" + truck);
+        log.info("/truck. truck=" + truck);
 
         return new ResponseEntity<>(truckService.updateTruck(truck), HttpStatus.OK);
     }
 
-    @DeleteMapping("/delete")
-    public ResponseEntity<DeleteResultDto> delete(String id) {
-        log.info("/truck/delete. id=" + id);
+    @DeleteMapping("/{id}")
+    public ResponseEntity<DeleteResultDto> delete(@PathVariable String id) {
+        log.info("/truck/" + id);
 
         return new ResponseEntity<>(truckService.deleteTruck(id), HttpStatus.OK);
     }
