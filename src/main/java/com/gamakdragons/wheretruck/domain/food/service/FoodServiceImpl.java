@@ -2,6 +2,7 @@ package com.gamakdragons.wheretruck.domain.food.service;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.gamakdragons.wheretruck.cloud.aws.service.S3Service;
@@ -46,8 +47,10 @@ public class FoodServiceImpl implements FoodService {
     public UpdateResultDto saveFood(String truckId, FoodSaveRequestDto foodSaveRequestDto) {
 
         Food food = foodSaveRequestDto.toEntity();
-        String foodImageUrl = s3Service.uploadFoodImage(FOOD_IMAGE_BUCKET, truckId, food.getId(), foodSaveRequestDto.getImage());
-        food.setImageUrl(foodImageUrl);
+        if( foodSaveRequestDto.getImage() != null) {
+            String foodImageUrl = s3Service.uploadFoodImage(FOOD_IMAGE_BUCKET, truckId, food.getId(), foodSaveRequestDto.getImage());
+            food.setImageUrl(foodImageUrl);
+        }
         log.info("food: " + food);
 
         Map<String, Object> params = new HashMap<>();
@@ -137,5 +140,37 @@ public class FoodServiceImpl implements FoodService {
                 .build();
        
     }
+
+    @Override
+    public UpdateResultDto sortFoods(String truckId, List<String> ids) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("ids", ids);
+
+        String script = "def sortedFoods = new ArrayList();" +
+                        "for(String id : params.ids) {" +
+                            "def target = ctx._source.foods.find(food -> food.id == id);" +
+                            "sortedFoods.add(target);" +
+                        "}" +
+                        "ctx._source.foods = sortedFoods;";
+        Script inline = new Script(ScriptType.INLINE, "painless", script, params);
+
+        UpdateRequest request = EsRequestFactory.createUpdateWithScriptRequest(TRUCK_INDEX, truckId, inline);
+        UpdateResponse response;
+
+        try {
+            response = restClient.update(request, RequestOptions.DEFAULT);
+        } catch(IOException e) {
+            log.error("IOException occured.");
+            return UpdateResultDto.builder()
+                    .result(e.getLocalizedMessage())
+                    .build();
+        }
+
+        return UpdateResultDto.builder()
+                .result(response.getResult().name())
+                .build();
+    };
+
+    
 
 }

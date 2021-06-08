@@ -18,18 +18,19 @@ public class Food {
     
     private String id;
     private String name;
+    //private int index;
     private int cost;
     private String description;
     private String imageUrl;
 
-    public Map<String, String> toMap() {
-        Map<String, String> foodMap = new HashMap<>();
+    public Map<String, Object> toMap() {
+        Map<String, Object> foodMap = new HashMap<>();
         
         foodMap.put("id", getId());
         foodMap.put("name", getName());
-        foodMap.put("cost", String.valueOf(cost));
-        foodMap.put("description", description);
-        foodMap.put("imageUrl", imageUrl);
+        foodMap.put("cost", getCost());
+        foodMap.put("description", getDescription());
+        foodMap.put("imageUrl", getImageUrl());
 
         return foodMap;
     }

@@ -1,5 +1,7 @@
 package com.gamakdragons.wheretruck.domain.food.controller;
 
+import java.util.List;
+
 import com.gamakdragons.wheretruck.common.UpdateResultDto;
 import com.gamakdragons.wheretruck.domain.food.dto.FoodSaveRequestDto;
 import com.gamakdragons.wheretruck.domain.food.dto.FoodUpdateRequestDto;
@@ -26,25 +28,32 @@ public class FoodController {
     @Autowired
     private FoodService service;
 
-    @PostMapping("/save/{truckId}")
+    @PostMapping("/{truckId}")
     public ResponseEntity<UpdateResultDto> save(@PathVariable String truckId, @RequestBody FoodSaveRequestDto foodSaveRequestDto) {
-        log.info("/food/save.");
+        log.info("/food/" + truckId);
 
         return new ResponseEntity<>(service.saveFood(truckId, foodSaveRequestDto), HttpStatus.OK);
     }
 
-    @PutMapping("/update/{truckId}")
+    @PutMapping("/{truckId}")
     public ResponseEntity<UpdateResultDto> update(@PathVariable String truckId, @RequestBody FoodUpdateRequestDto foodUpdateRequestDto) {
-        log.info("/food/update.");
+        log.info("/food/" + truckId);
 
         return new ResponseEntity<>(service.updateFood(truckId, foodUpdateRequestDto), HttpStatus.OK);
     }
 
-    @DeleteMapping("/delete/{truckId}/{id}")
+    @DeleteMapping("/{truckId}/{id}")
     public ResponseEntity<UpdateResultDto> delete(@PathVariable String truckId, @PathVariable String id) {
-        log.info("/food/delete. id=" + id);
+        log.info("/food/" + truckId + "/" + id);
 
         return new ResponseEntity<>(service.deleteFood(truckId, id), HttpStatus.OK);
+    }
+
+    @PutMapping("/{truckId}/{ids}")
+    public ResponseEntity<UpdateResultDto> sort(@PathVariable String truckId, @PathVariable List<String> ids) {
+        log.info("/food/" + truckId + "/" + ids);
+
+        return new ResponseEntity<>(service.sortFoods(truckId, ids), HttpStatus.OK);
     }
     
 }
