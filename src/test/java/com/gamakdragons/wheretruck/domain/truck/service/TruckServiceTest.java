@@ -3,6 +3,7 @@ package com.gamakdragons.wheretruck.domain.truck.service;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.number.IsCloseTo.closeTo;
@@ -14,13 +15,16 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import com.gamakdragons.wheretruck.cloud.elasticsearch.config.ElasticSearchConfig;
 import com.gamakdragons.wheretruck.cloud.elasticsearch.service.ElasticSearchServiceImpl;
 import com.gamakdragons.wheretruck.common.DeleteResultDto;
 import com.gamakdragons.wheretruck.common.GeoLocation;
 import com.gamakdragons.wheretruck.common.IndexResultDto;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
 import com.gamakdragons.wheretruck.common.UpdateResultDto;
+import com.gamakdragons.wheretruck.config.ElasticSearchConfig;
+import com.gamakdragons.wheretruck.domain.rating.entity.Rating;
+import com.gamakdragons.wheretruck.domain.rating.service.RatingService;
+import com.gamakdragons.wheretruck.domain.rating.service.RatingServiceImpl;
 import com.gamakdragons.wheretruck.domain.truck.entity.Truck;
 
 import org.apache.http.HttpHost;
@@ -50,14 +54,17 @@ import org.springframework.boot.test.context.SpringBootTest;
 import lombok.extern.slf4j.Slf4j;
 
 @SpringBootTest(
-    classes = {TruckServiceImpl.class, ElasticSearchServiceImpl.class, ElasticSearchConfig.class}, 
+    classes = {TruckServiceImpl.class, ElasticSearchServiceImpl.class, ElasticSearchConfig.class, RatingServiceImpl.class}, 
     properties = {"spring.config.location=classpath:application-test.yml"}
 )
 @Slf4j
 public class TruckServiceTest {
 
     @Autowired
-    private TruckService service;
+    private TruckService truckService;
+
+    @Autowired
+    private RatingService ratingService;
     
     @Value("${elasticsearch.index.truck.name}")
     private String TEST_TRUCK_INDEX_NAME;
@@ -95,7 +102,7 @@ public class TruckServiceTest {
         List<Truck> testTrucks = createTestTruckData();
         indexTestTruckData(testTrucks);
 
-        SearchResultDto<Truck> result = service.findAll();
+        SearchResultDto<Truck> result = truckService.findAll();
         log.info(result.toString());
 
         
@@ -128,7 +135,7 @@ public class TruckServiceTest {
         List<Truck> testTrucks = createTestTruckData();
         indexTestTruckData(testTrucks);
 
-        SearchResultDto<Truck> result = service.findByGeoLocation(
+        SearchResultDto<Truck> result = truckService.findByGeoLocation(
             GeoLocation.builder()
                 .lat(testTrucks.get(0).getGeoLocation().getLat() + 0.1f)
                 .lon(testTrucks.get(0).getGeoLocation().getLon() + 0.1f)
@@ -168,7 +175,7 @@ public class TruckServiceTest {
         List<Truck> testTrucks = createTestTruckData();
         indexTestTruckData(testTrucks);
 
-        SearchResultDto<Truck> result = service.findByUserId(testTrucks.get(0).getUserId());
+        SearchResultDto<Truck> result = truckService.findByUserId(testTrucks.get(0).getUserId());
         log.info(result.toString());
         
         assertThat(result.getStatus(), is("OK"));
@@ -196,12 +203,32 @@ public class TruckServiceTest {
     }
 
     @Test
+    void testFindByUserIdRatingsIsInCreatedDateReverseOrder() {
+
+        List<Truck> trucks = createTestTruckData();
+        indexTestTruckData(trucks);
+
+        List<Rating> ratings = createTestRatingData();
+        indexTestRatingData(trucks.get(0).getId(), ratings);
+
+        SearchResultDto<Truck> result = truckService.findByUserId(trucks.get(0).getUserId());
+        log.info(result.toString());
+        
+        result.getDocs().stream().forEach(truck -> {
+            assertThat(truck.getRatings().stream().map(rating -> rating.getId()).collect(Collectors.toList()),
+                        contains(ratings.get(2).getId(), ratings.get(1).getId(), ratings.get(0).getId())
+            );
+        });
+
+    }
+
+    @Test
     void testGetById() {
 
         List<Truck> testTrucks = createTestTruckData();
         indexTestTruckData(testTrucks);
 
-        Truck result = service.getById(testTrucks.get(0).getId());
+        Truck result = truckService.getById(testTrucks.get(0).getId());
         log.info(result.toString());
 
         Truck expectedTruck = Truck.builder()
@@ -221,12 +248,29 @@ public class TruckServiceTest {
     }
 
     @Test
+    void testGetByIdRatingsIsInCreatedDateReverseOrder() {
+
+        List<Truck> trucks = createTestTruckData();
+        indexTestTruckData(trucks);
+
+        List<Rating> ratings = createTestRatingData();
+        indexTestRatingData(trucks.get(0).getId(), ratings);
+
+        Truck resultTruck = truckService.getById(trucks.get(0).getId());
+        log.info(resultTruck.toString());
+
+        assertThat(resultTruck.getRatings().stream().map(rating -> rating.getId()).collect(Collectors.toList()),
+                    contains(ratings.get(2).getId(), ratings.get(1).getId(), ratings.get(0).getId())
+        );
+    }
+
+    @Test
     void testSaveTruck() {
 
         List<Truck> testTrucks = createTestTruckData();
 
         testTrucks.stream().forEach(truck -> {
-            IndexResultDto indexResult = service.saveTruck(truck);
+            IndexResultDto indexResult = truckService.saveTruck(truck);
             log.info("truck index result: " + indexResult.getResult() + ", truck id: " + indexResult.getId());
 
             assertThat(indexResult.getResult(), is("CREATED"));
@@ -247,10 +291,10 @@ public class TruckServiceTest {
         testTrucks.get(0).setName(nameToUpdate);
         testTrucks.get(0).setGeoLocation(geoLocationToUpdate);
         testTrucks.get(0).setDescription(descriptionToUpdate);
-        UpdateResultDto updateResult = service.updateTruck(testTrucks.get(0));
+        UpdateResultDto updateResult = truckService.updateTruck(testTrucks.get(0));
         assertThat(updateResult.getResult(), equalTo("UPDATED"));
 
-        Truck updatedTruck = service.getById(testTrucks.get(0).getId());
+        Truck updatedTruck = truckService.getById(testTrucks.get(0).getId());
         assertThat(updatedTruck.getName(), equalTo(nameToUpdate));
         assertThat(updatedTruck.getGeoLocation(), equalTo(geoLocationToUpdate));
         assertThat(updatedTruck.getDescription(), equalTo(descriptionToUpdate));
@@ -263,14 +307,14 @@ public class TruckServiceTest {
         List<Truck> testTrucks = createTestTruckData();
         indexTestTruckData(testTrucks);
 
-        DeleteResultDto deleteResult1 = service.deleteTruck(testTrucks.get(0).getId());
+        DeleteResultDto deleteResult1 = truckService.deleteTruck(testTrucks.get(0).getId());
         assertThat(deleteResult1.getResult(), is("DELETED"));
 
-        DeleteResultDto deleteResult2 = service.deleteTruck(testTrucks.get(1).getId());
+        DeleteResultDto deleteResult2 = truckService.deleteTruck(testTrucks.get(1).getId());
         assertThat(deleteResult2.getResult(), is("DELETED"));
 
-        assertThat(service.getById(testTrucks.get(0).getId()), nullValue());
-        assertThat(service.getById(testTrucks.get(0).getId()), nullValue());
+        assertThat(truckService.getById(testTrucks.get(0).getId()), nullValue());
+        assertThat(truckService.getById(testTrucks.get(0).getId()), nullValue());
     }
 
     @Test
@@ -279,10 +323,10 @@ public class TruckServiceTest {
         List<Truck> testTrucks = createTestTruckData();
         indexTestTruckData(testTrucks);
         
-        UpdateResultDto updateResult = service.openTruck(testTrucks.get(0).getId(), GeoLocation.builder().lat(33.0f).lon(133.0f).build());
+        UpdateResultDto updateResult = truckService.openTruck(testTrucks.get(0).getId(), GeoLocation.builder().lat(33.0f).lon(133.0f).build());
         assertThat(updateResult.getResult(), is("UPDATED"));
 
-        Truck startedTruck = service.getById(testTrucks.get(0).getId());
+        Truck startedTruck = truckService.getById(testTrucks.get(0).getId());
         assertThat(startedTruck.isOpened(), is(true));
         assertThat((double) startedTruck.getGeoLocation().getLat(), closeTo(33.0f, 0.001f));
         assertThat((double) startedTruck.getGeoLocation().getLon(), closeTo(133.0f, 0.001f));
@@ -294,10 +338,10 @@ public class TruckServiceTest {
         List<Truck> testTrucks = createTestTruckData();
         indexTestTruckData(testTrucks);
 
-        UpdateResultDto updateResult = service.stopTruck(testTrucks.get(1).getId());
+        UpdateResultDto updateResult = truckService.stopTruck(testTrucks.get(1).getId());
         assertThat(updateResult.getResult(), is("UPDATED"));
 
-        Truck stoppedTruck = service.getById(testTrucks.get(1).getId());
+        Truck stoppedTruck = truckService.getById(testTrucks.get(1).getId());
         assertThat(stoppedTruck.isOpened(), is(false));
     }
 
@@ -482,6 +526,19 @@ public class TruckServiceTest {
         }
     }
 
+    private void deleteTestTruckIndex() throws IOException {
+        GetIndexRequest getIndexRequest = new GetIndexRequest(TEST_TRUCK_INDEX_NAME);
+        if(esClient.indices().exists(getIndexRequest, RequestOptions.DEFAULT)) {
+            DeleteIndexRequest request = new DeleteIndexRequest(TEST_TRUCK_INDEX_NAME);
+            AcknowledgedResponse response = esClient.indices().delete(request, RequestOptions.DEFAULT);
+            log.info("index deleted: " + response.isAcknowledged());
+            if(!response.isAcknowledged()) {
+                throw new IOException();
+            }
+        }
+
+    }
+
     private List<Truck> createTestTruckData() {
 
         Truck truck1 = Truck.builder()
@@ -508,7 +565,7 @@ public class TruckServiceTest {
     private void indexTestTruckData(List<Truck> trucks) {
 
         trucks.forEach(truck -> {
-            IndexResultDto indexResult = service.saveTruck(truck);
+            IndexResultDto indexResult = truckService.saveTruck(truck);
             log.info("truck index result: " + indexResult.getResult() + ", truck id: " + indexResult.getId());
             assertThat(indexResult.getId(), is(truck.getId()));
         });
@@ -520,17 +577,51 @@ public class TruckServiceTest {
         }
     }
 
-    private void deleteTestTruckIndex() throws IOException {
-        GetIndexRequest getIndexRequest = new GetIndexRequest(TEST_TRUCK_INDEX_NAME);
-        if(esClient.indices().exists(getIndexRequest, RequestOptions.DEFAULT)) {
-            DeleteIndexRequest request = new DeleteIndexRequest(TEST_TRUCK_INDEX_NAME);
-            AcknowledgedResponse response = esClient.indices().delete(request, RequestOptions.DEFAULT);
-            log.info("index deleted: " + response.isAcknowledged());
-            if(!response.isAcknowledged()) {
-                throw new IOException();
-            }
+    private List<Rating> createTestRatingData() {
+
+        String userId = UUID.randomUUID().toString();
+
+        Rating rating1 = Rating.builder()
+                                .userId(userId)
+                                .comment("hello1")
+                                .star(3.0f)
+                                .build();
+
+        Rating rating2 = Rating.builder()
+                                .userId(userId)
+                                .comment("hello2")
+                                .star(5.0f)
+                                .build();
+
+        Rating rating3 = Rating.builder()
+                                .userId(userId)
+                                .comment("hello3")
+                                .star(1.0f)
+                                .build();
+
+        return Arrays.asList(rating1, rating2, rating3);
+    }
+
+    private void indexTestRatingData(String truckId, List<Rating> ratings) {
+
+        ratings.forEach(rating-> {
+            UpdateResultDto updateResult = ratingService.saveRating(truckId, rating);
+            log.info("rating index result: " + updateResult.getResult());
+            assertThat(updateResult.getResult(), is("UPDATED"));
+
+        try {
+            Thread.sleep(1000);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
         }
 
+        });
+
+        try {
+            Thread.sleep(2000);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
 }

@@ -7,7 +7,7 @@ import static org.hamcrest.Matchers.equalTo;
 import java.io.IOException;
 import java.util.UUID;
 
-import com.gamakdragons.wheretruck.cloud.elasticsearch.config.ElasticSearchConfig;
+import com.gamakdragons.wheretruck.config.ElasticSearchConfig;
 import com.gamakdragons.wheretruck.util.EsRequestFactory;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;

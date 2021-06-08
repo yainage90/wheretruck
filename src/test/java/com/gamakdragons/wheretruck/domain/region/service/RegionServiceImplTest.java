@@ -2,15 +2,19 @@ package com.gamakdragons.wheretruck.domain.region.service;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasSize;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
-import com.gamakdragons.wheretruck.cloud.elasticsearch.config.ElasticSearchConfig;
 import com.gamakdragons.wheretruck.cloud.elasticsearch.service.ElasticSearchServiceImpl;
 import com.gamakdragons.wheretruck.common.GeoLocation;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
+import com.gamakdragons.wheretruck.config.ElasticSearchConfig;
 import com.gamakdragons.wheretruck.domain.region.entity.Region;
 import com.gamakdragons.wheretruck.util.EsRequestFactory;
 
@@ -67,15 +71,12 @@ public class RegionServiceImplTest {
 
     private RestHighLevelClient esClient;
 
-    private Region region;
-
     @BeforeEach
     public void beforeEach() throws IOException {
 
         initRestHighLevelClient();
         deleteTestRegionIndex();
         createTestRegionIndex();
-        indexTestData();
     }
 
     @AfterEach
@@ -86,29 +87,38 @@ public class RegionServiceImplTest {
     @Test
     void testFindAll() {
 
+        List<Region> regions = createTestRegionData();
+        indexTestData(regions);
+
         SearchResultDto<Region> result = service.findAll();
 
         assertThat(result.getStatus(), is("OK"));
-        assertThat(result.getNumFound(), is(1));
-        assertThat(result.getDocs(), hasItem(region));
+        assertThat(result.getNumFound(), is(regions.size()));
+        assertThat(result.getDocs(), contains(regions));
     }
 
     @Test
     void testFindByAddress() {
 
-        SearchResultDto<Region> result = service.findByAddress("서울특별시", "관악구");
+        List<Region> regions = createTestRegionData();
+        indexTestData(regions);
+
+        SearchResultDto<Region> result = service.findByAddress(regions.get(0).getCity(), regions.get(0).getTown());
         log.info(result.toString());
 
         assertThat(result.getStatus(), is("OK"));
         assertThat(result.getNumFound(), is(1));
-        assertThat(result.getDocs(), hasItem(region));
+        assertThat(result.getDocs(), hasItem(regions.get(0)));
 
     }
 
     @Test
     void testFindByAddressFailsIfNoSuchAddress() {
 
-        SearchResultDto<Region> result = service.findByAddress("서울특별시", "강남구");
+        List<Region> regions = createTestRegionData();
+        indexTestData(regions);
+
+        SearchResultDto<Region> result = service.findByAddress(UUID.randomUUID().toString(), UUID.randomUUID().toString());
         log.info(result.toString());
 
         assertThat(result.getStatus(), is("OK"));
@@ -116,24 +126,64 @@ public class RegionServiceImplTest {
     }
 
     @Test
-    void testFindByLocation() {
+    void testFindByLocationDocsAreInShorterDistanceOrder() {
 
-        SearchResultDto<Region> result = service.findByLocation(GeoLocation.builder().lat(30.1f).lon(130.1f).build(), 100.0f);
-        log.info(result.toString());
+        List<Region> regions = createTestRegionData();
+        indexTestData(regions);
+
+        float region2Lat = regions.get(1).getGeoLocation().getLat() + 0.2f;
+        float region2Lon = regions.get(1).getGeoLocation().getLon() + 0.2f;
+
+        SearchResultDto<Region> result = service.findByLocation(
+                GeoLocation.builder().lat(region2Lat).lon(region2Lon).build(), 500
+        );
+
+        result.getDocs().forEach(region -> {
+            log.info(region.getRegionName());
+        });
+
+        assertThat(result.getStatus(), is("OK"));
+        assertThat(result.getNumFound(), is(3));
+        assertThat(result.getDocs(), contains(regions.get(1), regions.get(2), regions.get(0)));
+    }
+
+    @Test
+    void testFindByLocationDocsOnlyContainsInDistance() {
+
+        List<Region> regions = createTestRegionData();
+        indexTestData(regions);
+
+        float region2Lat = regions.get(1).getGeoLocation().getLat() + 0.000001f;
+        float region2Lon = regions.get(1).getGeoLocation().getLon() + 0.000001f;
+
+        SearchResultDto<Region> result = service.findByLocation(
+            GeoLocation.builder().lat(region2Lat).lon(region2Lon).build(), 10
+        );
+
+        result.getDocs().forEach(region -> {
+            log.info(region.getRegionName());
+        });
 
         assertThat(result.getStatus(), is("OK"));
         assertThat(result.getNumFound(), is(1));
-        assertThat(result.getDocs(), hasItem(region));
+        assertThat(result.getDocs(), hasItem(regions.get(1)));
     }
 
     @Test
-    void testFindByLocationFailsIfNoSuchLocation() {
+    void testFindByLocationDocsEmptyIfAnyRegionInDistance() {
 
-        SearchResultDto<Region> result = service.findByLocation(GeoLocation.builder().lat(33.1f).lon(135.1f).build(), 100.0f);
+        List<Region> regions = createTestRegionData();
+        indexTestData(regions);
+
+        float pivotLat = regions.get(0).getGeoLocation().getLat() - 10.0f;
+        float pivotLon = regions.get(0).getGeoLocation().getLon() - 10.0f;
+
+        SearchResultDto<Region> result = service.findByLocation(GeoLocation.builder().lat(pivotLat).lon(pivotLon).build(), 10.0f);
         log.info(result.toString());
 
         assertThat(result.getStatus(), is("OK"));
         assertThat(result.getNumFound(), is(0));
+        assertThat(result.getDocs(), hasSize(0));
     }
 
     private void initRestHighLevelClient() {
@@ -297,36 +347,41 @@ public class RegionServiceImplTest {
         }
     }
 
-    private void indexTestData() throws IOException {
+    private List<Region> createTestRegionData() {
 
-        region = Region.builder()
-                            .regionName("낙성대역")
-                            .regionType(03)
-                            .city("서울특별시")
-                            .town("관악구")
-                            .roadAddress("서울특별시 관악구 남부순환로 123-456")
-                            .postAddress("서울특별시 관악구 낙성대동 81-12")
+        Region region1 = Region.builder()
+                            .regionName("region1")
+                            .city("서울특별시").town("관악구")
                             .geoLocation(GeoLocation.builder().lat(30.0f).lon(130.0f).build())
-                            .capacity(5)
-                            .cost("월 10,000원")
-                            .permissionStartDate("2021-01-12")
-                            .permissionEndDate("2021-12-03")
-                            .closedDays("연중무휴")
-                            .weekdayStartTime("10:00")
-                            .weekdayEndTime("18:00")
-                            .weekendStartTime("09:00")
-                            .weekendEndTime("20:00")
-                            .restrictedItems(null)
-                            .agencyName("관악구청")
-                            .agencyTel("02-123-4001")
+                            .build();
+        Region region2 = Region.builder()
+                            .regionName("region2")
+                            .geoLocation(GeoLocation.builder().lat(31.0f).lon(131.0f).build())
                             .build();
         
-        IndexRequest request = EsRequestFactory.createIndexRequest(TEST_REGION_INDEX_NAME, UUID.randomUUID().toString(), region);
-        IndexResponse response = esClient.index(request, RequestOptions.DEFAULT);
-        log.info(response.getResult().name());
+        Region region3 = Region.builder()
+                            .regionName("region3")
+                            .geoLocation(GeoLocation.builder().lat(32.0f).lon(132.0f).build())
+                            .build();
+
+        return Arrays.asList(region1, region2, region3);
+        
+    }
+
+    private void indexTestData(List<Region> regions) {
+
+        regions.forEach(region -> {
+            IndexRequest request = EsRequestFactory.createIndexRequest(TEST_REGION_INDEX_NAME, UUID.randomUUID().toString(), region);
+            try {
+                IndexResponse response = esClient.index(request, RequestOptions.DEFAULT);
+                log.info(response.getResult().name());
+            } catch(IOException e) {
+                e.printStackTrace();
+            }
+        });
 
         try {
-            Thread.sleep(1000);
+            Thread.sleep(2000);
         } catch(InterruptedException e) {
             e.printStackTrace();
         }

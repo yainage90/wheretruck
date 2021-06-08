@@ -1,25 +1,25 @@
 package com.gamakdragons.wheretruck.domain.rating.service;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.closeTo;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.not;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
-import com.gamakdragons.wheretruck.cloud.elasticsearch.config.ElasticSearchConfig;
 import com.gamakdragons.wheretruck.cloud.elasticsearch.service.ElasticSearchServiceImpl;
-import com.gamakdragons.wheretruck.common.DeleteResultDto;
 import com.gamakdragons.wheretruck.common.GeoLocation;
 import com.gamakdragons.wheretruck.common.IndexResultDto;
-import com.gamakdragons.wheretruck.common.SearchResultDto;
 import com.gamakdragons.wheretruck.common.UpdateResultDto;
-import com.gamakdragons.wheretruck.domain.food.dto.FoodSaveRequestDto;
+import com.gamakdragons.wheretruck.config.ElasticSearchConfig;
+import com.gamakdragons.wheretruck.domain.rating.dto.MyRatingDto;
 import com.gamakdragons.wheretruck.domain.rating.entity.Rating;
 import com.gamakdragons.wheretruck.domain.truck.entity.Truck;
 import com.gamakdragons.wheretruck.domain.truck.service.TruckService;
@@ -71,6 +71,12 @@ public class RatingServiceImplTest {
     @Value("${elasticsearch.port}")
     private int ES_PORT;
 
+    @Value("${elasticsearch.username}")
+    private String ES_USER;
+
+    @Value("${elasticsearch.password}")
+    private String ES_PASSWORD;
+
     private RestHighLevelClient esClient;
 
     @BeforeEach
@@ -86,127 +92,127 @@ public class RatingServiceImplTest {
         deleteTestTruckIndex();
     }
 
-
     @Test
-    void testSaveRating() {
+    void testSaveRatingUpdateTruckNumRatingAndStarAvg() {
 
-        IndexResultDto indexResult = ratingService.saveRating(rating);
-        log.info("rating index result: " + indexResult.getResult() + ", rating id: " + indexResult.getId());
+        List<Truck> trucks = createTestTruckData();
+        indexTestTruckData(trucks);
 
-        assertThat(indexResult.getResult(), is("CREATED"));
-        assertThat(indexResult.getId(), is(rating.getId()));
+        List<Rating> ratings = createTestRatingData();
 
-    }
-
-    @Test
-    void testUpdateRating() {
-
-        IndexResultDto indexResult = ratingService.saveRating(rating);
-        log.info("rating index result: " + indexResult.getResult() + ", rating id: " + indexResult.getId());
-
-        assertThat(indexResult.getResult(), is("CREATED"));
+        ratings.forEach(rating -> {
+            UpdateResultDto indexResult = ratingService.saveRating(trucks.get(0).getId(), rating);
+            assertThat(indexResult.getResult(), is("UPDATED"));
+            assertThat(indexResult.getId(), is(rating.getId()));
+        });
 
         try {
-            Thread.sleep(500);
+            Thread.sleep(1000);
         } catch(InterruptedException e) {
             e.printStackTrace();
         }
 
+        Truck truck = truckService.getById(trucks.get(0).getId());
+        List<Rating> truck1Ratings = truck.getRatings();
+
+        assertThat(truck.getNumRating(), is(ratings.size()));
+        assertThat(truck1Ratings.size(), is(ratings.size()));
+
+        double calculatedStarAvg = ratings.stream().mapToDouble(rating -> rating.getStar()).average().getAsDouble();
+        assertThat((double) truck.getStarAvg(), closeTo(calculatedStarAvg, 0.0001f));
+    }
+
+    @Test
+    void testUpdateRatingUpdateTruckStarAvg() {
+
+        List<Truck> trucks = createTestTruckData();
+        indexTestTruckData(trucks);
+
+        List<Rating> ratings = createTestRatingData();
+        indexTestRatingData(trucks.get(0).getId(), ratings);
+
+        try {
+            Thread.sleep(1000);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        float starToUpdate = ratings.get(0).getStar() + 1.0f;
         String commentToUpdate = "정말 재밌어요ㅋㅋ";
-        rating.setComment(commentToUpdate);
-        UpdateResultDto updateResult = ratingService.updateRating(rating);
+        ratings.get(0).setStar(starToUpdate);
+        ratings.get(0).setComment(commentToUpdate);
+        UpdateResultDto updateResult = ratingService.updateRating(trucks.get(0).getId(), ratings.get(0));
 
         assertThat(updateResult.getResult(), is("UPDATED"));
-        assertThat(ratingService.getById(rating.getId()).getComment(), equalTo(commentToUpdate));
 
+        try {
+            Thread.sleep(1000);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        Truck truck = truckService.getById(trucks.get(0).getId());
+        double calculatedStarAvg = ratings.stream().mapToDouble(rating -> rating.getStar()).average().getAsDouble();
+        assertThat((double) truck.getStarAvg(), closeTo(calculatedStarAvg, 0.0001f));
     }
 
     @Test
     void testDeleteRating() {
 
-        IndexResultDto indexResult = ratingService.saveRating(rating);
-        log.info("rating index result: " + indexResult.getResult() + ", rating id: " + indexResult.getId());
+        List<Truck> trucks = createTestTruckData();
+        indexTestTruckData(trucks);
 
-        assertThat(indexResult.getResult(), is("CREATED"));
+        List<Rating> ratings = createTestRatingData();
+        indexTestRatingData(trucks.get(0).getId(), ratings);
 
         try {
-            Thread.sleep(500);
+            Thread.sleep(1000);
         } catch(InterruptedException e) {
             e.printStackTrace();
         }
 
-        DeleteResultDto deleteResult = ratingService.deleteRating(rating.getId());
+        UpdateResultDto deleteResult = ratingService.deleteRating(trucks.get(0).getId(), ratings.get(0).getId());
+        assertThat(deleteResult.getResult(), is("UPDATED"));
 
-        assertThat(deleteResult.getResult(), is("DELETED"));
-        assertThat(ratingService.getById(rating.getId()), nullValue());
+        try {
+            Thread.sleep(1000);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        Truck truck = truckService.getById(trucks.get(0).getId());
+        List<Rating> truck1Ratings = truck.getRatings();
+
+        assertThat(truck.getNumRating(), is(ratings.size() - 1));
+        assertThat(truck1Ratings.size(), is(ratings.size() - 1));
+        assertThat(truck1Ratings, hasItems(ratings.get(1), ratings.get(2)));
+        assertThat(truck1Ratings, not(hasItem(ratings.get(0))));
+
+        assertThat((double) truck.getStarAvg(), closeTo((ratings.get(1).getStar() + ratings.get(2).getStar()) / 2, 0.0001f));
     }
 
     @Test
-    void testFindByTruckId() {
+    void testFindByUserIdResultIsInCreatedDateReverseOrder() {
 
-        IndexResultDto indexResult = ratingService.saveRating(rating);
-        log.info("rating index result: " + indexResult.getResult() + ", rating id: " + indexResult.getId());
+        List<Truck> trucks = createTestTruckData();
+        indexTestTruckData(trucks);
 
-        assertThat(indexResult.getResult(), is("CREATED"));
+        List<Rating> ratings = createTestRatingData();
+        indexTestRatingData(trucks.get(0).getId(), ratings);
 
         try {
-            Thread.sleep(500);
+            Thread.sleep(1000);
         } catch(InterruptedException e) {
             e.printStackTrace();
         }
 
-        SearchResultDto<Rating> result = ratingService.findByTruckId("truckid");
-        log.info(result.toString());
+        String commonUserId = ratings.get(0).getUserId();
 
-        assertThat(result.getStatus(), equalTo("OK"));
-        assertThat(result.getNumFound(), equalTo(1));
-        assertThat(result.getDocs().get(0), equalTo(rating));
-
+        List<MyRatingDto> searchedRatings = ratingService.findByUserId(commonUserId).getDocs();
+        assertThat(searchedRatings.stream().map(r -> r.getId()).collect(Collectors.toList()), 
+                    contains(ratings.get(2).getId(), ratings.get(1).getId(), ratings.get(0).getId())
+        );
     }
-
-    @Test
-    void testFindByUserId() {
-
-        IndexResultDto indexResult = ratingService.saveRating(rating);
-        log.info("rating index result: " + indexResult.getResult() + ", rating id: " + indexResult.getId());
-
-        assertThat(indexResult.getResult(), is("CREATED"));
-
-        try {
-            Thread.sleep(500);
-        } catch(InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        SearchResultDto<Rating> result = ratingService.findByUserId("userid");
-        log.info(result.toString());
-
-        assertThat(result.getStatus(), equalTo("OK"));
-        assertThat(result.getNumFound(), equalTo(1));
-        assertThat(result.getDocs().get(0), equalTo(rating));
-
-    }
-
-    @Test
-    void testGetById() {
-
-        IndexResultDto indexResult = ratingService.saveRating(rating);
-        log.info("rating index result: " + indexResult.getResult() + ", rating id: " + indexResult.getId());
-
-        assertThat(indexResult.getResult(), is("CREATED"));
-
-        try {
-            Thread.sleep(500);
-        } catch(InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        Rating resultRating = ratingService.getById(rating.getId());
-        log.info(resultRating.toString());
-        assertThat(resultRating, equalTo(rating));
-    }
-
-    
 
     private void initRestHighLevelClient() {
 
@@ -400,7 +406,7 @@ public class RatingServiceImplTest {
                             .geoLocation(GeoLocation.builder().lat(30).lon(130).build())
                             .description("this is truck1")
                             .opened(false)
-                            .userId("userid1")
+                            .userId(UUID.randomUUID().toString())
                             .build();
 
         Truck truck2 = Truck.builder()
@@ -409,7 +415,7 @@ public class RatingServiceImplTest {
                             .geoLocation(GeoLocation.builder().lat(40).lon(140).build())
                             .description("this is truck2")
                             .opened(true)
-                            .userId("userid2")
+                            .userId(UUID.randomUUID().toString())
                             .build();
 
         return Arrays.asList(truck1, truck2);
@@ -432,22 +438,27 @@ public class RatingServiceImplTest {
 
     private List<Rating> createTestRatingData() {
 
+        String userId = UUID.randomUUID().toString();
+
         Rating rating1 = Rating.builder()
-                                .truckId(UUID.randomUUID().toString())
-                                .userId(UUID.randomUUID().toString())
+                                .userId(userId)
                                 .comment("hello1")
-                                .createdDate(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
-                                .updatedDate(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
+                                .star(3.0f)
                                 .build();
 
         Rating rating2 = Rating.builder()
-                                .truckId(UUID.randomUUID().toString())
-                                .userId(UUID.randomUUID().toString())
+                                .userId(userId)
                                 .comment("hello2")
-                                .createdDate(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
-                                .updatedDate(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
+                                .star(5.0f)
                                 .build();
-        return Arrays.asList(rating1, rating2);
+
+        Rating rating3 = Rating.builder()
+                                .userId(userId)
+                                .comment("hello3")
+                                .star(1.0f)
+                                .build();
+
+        return Arrays.asList(rating1, rating2, rating3);
     }
 
     private void indexTestRatingData(String truckId, List<Rating> ratings) {
@@ -456,6 +467,13 @@ public class RatingServiceImplTest {
             UpdateResultDto updateResult = ratingService.saveRating(truckId, rating);
             log.info("rating index result: " + updateResult.getResult());
             assertThat(updateResult.getResult(), is("UPDATED"));
+
+        try {
+            Thread.sleep(1000);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
+
         });
 
         try {

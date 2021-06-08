@@ -4,19 +4,26 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.hasSize;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 
 import com.gamakdragons.wheretruck.cloud.elasticsearch.service.ElasticSearchServiceImpl;
 import com.gamakdragons.wheretruck.common.DeleteResultDto;
 import com.gamakdragons.wheretruck.common.IndexResultDto;
-import com.gamakdragons.wheretruck.common.SearchResultDto;
 import com.gamakdragons.wheretruck.common.UpdateResultDto;
+import com.gamakdragons.wheretruck.config.ElasticSearchConfig;
 import com.gamakdragons.wheretruck.user.entity.User;
 
 import org.apache.http.HttpHost;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
+import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -38,13 +45,13 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import lombok.extern.slf4j.Slf4j;
 
-@SpringBootTest(classes = {UserServiceImpl.class, ElasticSearchServiceImpl.class}, 
+@SpringBootTest(classes = {UserServiceImpl.class, ElasticSearchServiceImpl.class, ElasticSearchConfig.class}, 
                 properties = {"spring.config.location=classpath:application-test.yml"})
 @Slf4j
 public class UserServiceImplTest {
 
     @Autowired
-    private UserService service;
+    private UserService userService;
     
     @Value("${elasticsearch.index.user.name}")
     private String TEST_USER_INDEX_NAME;
@@ -55,9 +62,13 @@ public class UserServiceImplTest {
     @Value("${elasticsearch.port}")
     private int ES_PORT;
 
-    private RestHighLevelClient esClient;
+    @Value("${elasticsearch.username}")
+    private String ES_USER;
 
-    private User user;
+    @Value("${elasticsearch.password}")
+    private String ES_PASSWORD;
+
+    private RestHighLevelClient esClient;
 
     @BeforeEach
     public void beforeEach() throws IOException {
@@ -73,82 +84,13 @@ public class UserServiceImplTest {
         deleteTestUserIndex();
     }
 
-    @Test
-    void testFindAll() {
-
-        IndexResultDto indexResult = service.saveUser(user);
-        log.info("user index result: " + indexResult.getResult() + ", user id: " + indexResult.getId());
-
-        assertThat(indexResult.getId(), is(user.getId()));
-
-        try {
-            Thread.sleep(2000);
-        } catch(InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        SearchResultDto<User> result = service.findAll();
-        log.info(result.toString());
-
-        
-        assertThat(result.getStatus(), is("OK"));
-        assertThat(result.getNumFound(), is(1L));
-
-        assertThat(result.getDocs(), hasItems(user));
-
-    }
-
-    @Test
-    void testDeleteUser() {
-
-        IndexResultDto indexResult = service.saveUser(user);
-        log.info("user index result: " + indexResult.getResult() + ", user id: " + indexResult.getId());
-
-        assertThat(indexResult.getResult(), is("CREATED"));
-
-        try {
-            Thread.sleep(2000);
-        } catch(InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        DeleteResultDto deleteResult = service.deleteUser(user.getId());
-
-        assertThat(deleteResult.getResult(), is("DELETED"));
-        assertThat(service.getById(user.getId()), nullValue());
-
-    }
-
-    @Test
-    void testFindByEmail() {
-
-        IndexResultDto indexResult = service.saveUser(user);
-        log.info("user index result: " + indexResult.getResult() + ", user id: " + indexResult.getId());
-
-        assertThat(indexResult.getResult(), is("CREATED"));
-
-        try {
-            Thread.sleep(2000);
-        } catch(InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        SearchResultDto<User> resultUser = service.findByEmail(user.getEmail());
-        log.info(resultUser.toString());
-
-        assertThat(resultUser.getStatus(), equalTo("OK"));
-        assertThat(resultUser.getNumFound(), equalTo(1L));
-        assertThat(resultUser.getDocs().get(0), equalTo(user));
-
-    }
+    
 
     @Test
     void testGetById() {
 
-        IndexResultDto indexResult = service.saveUser(user);
-        log.info("user index result: " + indexResult.getResult() + ", user id: " + indexResult.getId());
-
-        assertThat(indexResult.getResult(), is("CREATED"));
+        User user = createTestUserData();
+        indexTestUserData(user);
 
         try {
             Thread.sleep(2000);
@@ -156,8 +98,7 @@ public class UserServiceImplTest {
             e.printStackTrace();
         }
 
-        User resultUser = service.getById(user.getId());
-        log.info(resultUser.toString());
+        User resultUser = userService.getById(user.getId());
         assertThat(resultUser, equalTo(user));
 
     }
@@ -165,7 +106,9 @@ public class UserServiceImplTest {
     @Test
     void testSaveUser() {
 
-        IndexResultDto indexResult = service.saveUser(user);
+        User user = createTestUserData();
+
+        IndexResultDto indexResult = userService.saveUser(user);
         log.info("user index result: " + indexResult.getResult() + ", user id: " + indexResult.getId());
 
         assertThat(indexResult.getResult(), is("CREATED"));
@@ -176,10 +119,20 @@ public class UserServiceImplTest {
     @Test
     void testUpdateUser() {
 
-        IndexResultDto indexResult = service.saveUser(user);
-        log.info("user index result: " + indexResult.getResult() + ", user id: " + indexResult.getId());
+        User user = createTestUserData();
+        indexTestUserData(user);
 
-        assertThat(indexResult.getResult(), is("CREATED"));
+        String nickNameToUpdate = "updated " + user.getNickName();
+        user.setNickName(nickNameToUpdate);
+
+        UpdateResultDto updateResult = userService.updateUser(user);
+        try {
+            Thread.sleep(2000);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        assertThat(updateResult.getResult(), is("UPDATED"));
 
         try {
             Thread.sleep(2000);
@@ -187,19 +140,109 @@ public class UserServiceImplTest {
             e.printStackTrace();
         }
 
-        String emailToUpdate = "goodbye@xyz.net";
-        user.setEmail(emailToUpdate);
-        UpdateResultDto updateResult = service.updateUser(user);
+        assertThat(userService.getById(user.getId()).getNickName(), equalTo(nickNameToUpdate));
+    }
 
-        assertThat(updateResult.getResult(), is("UPDATED"));
-        assertThat(service.getById(user.getId()).getEmail(), equalTo(emailToUpdate));
 
+    @Test
+    void testDeleteUser() {
+
+        User user = createTestUserData();
+        indexTestUserData(user);
+
+        try {
+            Thread.sleep(2000);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        DeleteResultDto deleteResult = userService.deleteUser(user.getId());
+
+        assertThat(deleteResult.getResult(), is("DELETED"));
+        try {
+            Thread.sleep(200);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        assertThat(userService.getById(user.getId()), nullValue());
+    }
+
+    @Test
+    void testAddFavorite() {
+
+        User user = createTestUserData();
+        indexTestUserData(user);
+
+        try {
+            Thread.sleep(2000);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        List<String> favoriteTruckIds = createTestFavoriteTruckIds();
+        indexTestFavoriteTruckIds(user.getId(), favoriteTruckIds);
+
+        try {
+            Thread.sleep(2000);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        List<String> savedTruckIds = userService.getById(user.getId()).getFavorites();
+        assertThat(savedTruckIds, hasSize(10));
+        assertThat(savedTruckIds, equalTo(favoriteTruckIds));
+    }
+
+    @Test
+    void testDeleteFavorite() {
+
+        User user = createTestUserData();
+        indexTestUserData(user);
+
+        try {
+            Thread.sleep(2000);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        List<String> favoriteTruckIds = createTestFavoriteTruckIds();
+        indexTestFavoriteTruckIds(user.getId(), favoriteTruckIds);
+
+        try {
+            Thread.sleep(2000);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        for(int i = 0; i < 4; i++) {
+            UpdateResultDto deleteResultDto = userService.deleteFavorite(user.getId()
+                                            , favoriteTruckIds.remove(new Random().nextInt(favoriteTruckIds.size())));
+            assertThat(deleteResultDto.getResult(), is("UPDATED"));
+        }
+
+        try {
+            Thread.sleep(2000);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        List<String> remainedTruckIds = userService.getById(user.getId()).getFavorites();
+        assertThat(remainedTruckIds, hasSize(6));
+        assertThat(remainedTruckIds, is(favoriteTruckIds));
     }
 
     private void initRestHighLevelClient() {
+
+        CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+        credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(ES_USER, ES_PASSWORD));
+
         RestClientBuilder builder = RestClient.builder(
             new HttpHost(ES_HOST, ES_PORT, "http")
-        );
+        )
+        .setHttpClientConfigCallback((httpClientBuilder) -> {
+            return httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
+        });
 
         this.esClient = new RestHighLevelClient(builder);
     }
@@ -224,24 +267,23 @@ public class UserServiceImplTest {
                 }
                 builder.endObject();
 
-                builder.startObject("email");
-                {
-                    builder.field("type", "keyword");
-                }
-                builder.endObject();
-
-                builder.startObject("name");
-                {
-                    builder.field("type", "keyword");
-                }
-                builder.endObject();
-
                 builder.startObject("nickName");
                 {
                     builder.field("type", "keyword");
                 }
                 builder.endObject();
+                
+                builder.startObject("isOwner");
+                {
+                    builder.field("type", "boolean");
+                }
+                builder.endObject();
 
+                builder.startObject("favorites");
+                {
+                    builder.field("type", "keyword");
+                }
+                builder.endObject();
             }
             builder.endObject();
         }
@@ -262,15 +304,45 @@ public class UserServiceImplTest {
         }
     }
 
-    private void createTestUserData() {
+    private User createTestUserData() {
 
-        user = User.builder()
-                            .id(UUID.randomUUID().toString())
-                            .email("hello@xyz.com")
-                            .name("두한이")
-                            .nickName("잇뽕")
-                            .build();
+        return User.builder()
+                    .id(UUID.randomUUID().toString())
+                    .nickName("유저1")
+                    .isOwner(false)
+                    .build();
+    }
 
+    private void indexTestUserData(User user) {
+        IndexResultDto indexResult = userService.saveUser(user);
+        assertThat(indexResult.getId(), is(user.getId()));
+
+        try {
+            Thread.sleep(1500);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    private List<String> createTestFavoriteTruckIds() {
+
+        List<String> favoriteTruckIds = new ArrayList<>();
+        for(int i = 0; i < 10; i++) {
+            String truckId = UUID.randomUUID().toString();
+            favoriteTruckIds.add(truckId);
+        }
+
+        
+
+        return favoriteTruckIds;
+    }
+
+    private void indexTestFavoriteTruckIds(String userId, List<String> favoriteTruckIds) {
+        favoriteTruckIds.forEach(truckId -> {
+            UpdateResultDto updateResultDto = userService.addFavorite(userId, truckId);
+            assertThat(updateResultDto.getResult(), is("UPDATED"));
+        });
     }
 
     private void deleteTestUserIndex() throws IOException {
@@ -285,5 +357,7 @@ public class UserServiceImplTest {
         }
 
     }
+
+
 
 }

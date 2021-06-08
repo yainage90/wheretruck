@@ -2,14 +2,18 @@ package com.gamakdragons.wheretruck.domain.food.service;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.SdkClientException;
@@ -23,13 +27,13 @@ import com.amazonaws.services.s3.model.CreateBucketRequest;
 import com.amazonaws.services.s3.model.DeleteBucketRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
-import com.gamakdragons.wheretruck.cloud.aws.config.S3Config;
 import com.gamakdragons.wheretruck.cloud.aws.service.S3ServiceImpl;
-import com.gamakdragons.wheretruck.cloud.elasticsearch.config.ElasticSearchConfig;
 import com.gamakdragons.wheretruck.cloud.elasticsearch.service.ElasticSearchServiceImpl;
 import com.gamakdragons.wheretruck.common.GeoLocation;
 import com.gamakdragons.wheretruck.common.IndexResultDto;
 import com.gamakdragons.wheretruck.common.UpdateResultDto;
+import com.gamakdragons.wheretruck.config.ElasticSearchConfig;
+import com.gamakdragons.wheretruck.config.S3Config;
 import com.gamakdragons.wheretruck.domain.food.dto.FoodSaveRequestDto;
 import com.gamakdragons.wheretruck.domain.food.dto.FoodUpdateRequestDto;
 import com.gamakdragons.wheretruck.domain.food.entity.Food;
@@ -224,6 +228,49 @@ public class FoodServiceImplTest {
 
         assertThat(truckService.getById(trucks.get(0).getId()).getFoods(), hasSize(0));
 
+    }
+
+    @Test
+    void testSortFoods() {
+
+        List<Truck> trucks = createTestTruckData();
+        indexTestTruckData(trucks);
+
+        List<String> createdIds = new ArrayList<>();
+
+        for(int i = 0; i < 10; i++) {
+            FoodSaveRequestDto foodSaveRequestDto = new FoodSaveRequestDto();
+            foodSaveRequestDto.setName("food" + i);
+            foodSaveRequestDto.setCost(100);
+            foodSaveRequestDto.setDescription("this is food" + i);
+            foodSaveRequestDto.setImage(null);
+
+            UpdateResultDto updateResultDto = foodService.saveFood(trucks.get(0).getId(), foodSaveRequestDto);
+            createdIds.add(updateResultDto.getId());
+        }
+
+        log.info(createdIds.toString());
+
+        try {
+            Thread.sleep(2000);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        Collections.shuffle(createdIds);
+        log.info(createdIds.toString());
+
+        foodService.sortFoods(trucks.get(0).getId(), createdIds);
+
+        try {
+            Thread.sleep(2000);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        List<Food> foods = truckService.getById(trucks.get(0).getId()).getFoods();
+        List<String> sortedIds = foods.stream().map(food -> food.getId()).collect(Collectors.toList());
+        assertThat(sortedIds, equalTo(createdIds));
     }
 
     private void initRestHighLevelClient() {

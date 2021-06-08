@@ -3,6 +3,7 @@ package com.gamakdragons.wheretruck.cloud.aws.service;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.Random;
 import java.util.UUID;
@@ -17,9 +18,10 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.CreateBucketRequest;
 import com.amazonaws.services.s3.model.DeleteBucketRequest;
+import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
-import com.gamakdragons.wheretruck.cloud.aws.config.S3Config;
+import com.gamakdragons.wheretruck.config.S3Config;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -66,7 +68,7 @@ public class S3ServiceImplTest {
     }
 
     @Test
-    void testUploadFoodImage() {
+    void testUploadFoodImage() throws IOException {
 
         String truckId = UUID.randomUUID().toString();
         String foodId = UUID.randomUUID().toString();
@@ -78,6 +80,10 @@ public class S3ServiceImplTest {
         log.info("image uploaded. url="+ imageUrl);
 
         assertThat(s3Client.doesObjectExist(FOOD_IMAGE_BUCKET, truckId + foodId), is(true));
+
+        byte[] readImageBinary = new byte[128];
+        s3Client.getObject(new GetObjectRequest(FOOD_IMAGE_BUCKET, truckId + foodId)).getObjectContent().read(readImageBinary);
+        assertThat(readImageBinary, is(imageBinary));
     }
 
     @Test
