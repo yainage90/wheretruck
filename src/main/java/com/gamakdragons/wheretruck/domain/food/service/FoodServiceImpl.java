@@ -47,7 +47,7 @@ public class FoodServiceImpl implements FoodService {
     public UpdateResultDto saveFood(String truckId, FoodSaveRequestDto foodSaveRequestDto) {
 
         Food food = foodSaveRequestDto.toEntity();
-        if( foodSaveRequestDto.getImage() != null) {
+        if(foodSaveRequestDto.getImage() != null) {
             String foodImageUrl = s3Service.uploadFoodImage(FOOD_IMAGE_BUCKET, truckId, food.getId(), foodSaveRequestDto.getImage());
             food.setImageUrl(foodImageUrl);
         }
