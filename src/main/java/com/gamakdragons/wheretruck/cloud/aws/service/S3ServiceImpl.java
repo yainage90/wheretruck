@@ -9,13 +9,13 @@ import com.amazonaws.services.s3.model.CannedAccessControlList;
 import com.amazonaws.services.s3.model.DeleteObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-@Component
+@Service
 @Slf4j
 @RequiredArgsConstructor
 public class S3ServiceImpl implements S3Service {
@@ -24,6 +24,10 @@ public class S3ServiceImpl implements S3Service {
 
     @Override
     public String uploadFoodImage(String bucketName, String truckId, String foodId, MultipartFile imageFile) {
+
+        if(imageFile == null) {
+            return null;
+        }
 
         String fileName = truckId + foodId;
         File foodImageFile = convertToFile(fileName, imageFile);
