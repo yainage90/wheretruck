@@ -1,9 +1,9 @@
-package com.gamakdragons.wheretruck.cloud.aws.service.controller;
+package com.gamakdragons.wheretruck.cloud.aws.controller;
 
 import java.util.stream.Collectors;
 
 import com.amazonaws.services.s3.AmazonS3;
-import com.gamakdragons.wheretruck.cloud.entity.S3Status;
+import com.gamakdragons.wheretruck.cloud.aws.entity.S3Status;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,7 +16,7 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/s3")
 @RequiredArgsConstructor
-public class S3Controller {
+public class S3MonitorController {
 
     private final AmazonS3 s3Client;
 
