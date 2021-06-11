@@ -11,7 +11,6 @@ public interface UserService {
 
     IndexResultDto saveUser(User user);
     DeleteResultDto deleteUser(String id);
-
     UpdateResultDto changeNickName(String userId, String nickName);
 
     UpdateResultDto addFavorite(String userId, String truckId);
