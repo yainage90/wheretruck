@@ -22,3 +22,4 @@ public class User {
     private Role role;
     private List<String> favorites;
 }
+
