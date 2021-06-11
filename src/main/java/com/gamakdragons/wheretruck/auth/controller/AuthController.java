@@ -11,6 +11,7 @@ import com.gamakdragons.wheretruck.auth.service.OAuth2Service;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import lombok.RequiredArgsConstructor;
@@ -24,14 +25,14 @@ public class AuthController {
 	private final OAuth2Service service;
 
 	@PutMapping("/login")
-	public ResponseEntity<LoginResponseDto> login(LoginRequestDto loginRequestDto) {
+	public ResponseEntity<LoginResponseDto> login(@RequestBody LoginRequestDto loginRequestDto) {
 		log.info("/login. loginRequestDto=" + loginRequestDto);
 
 		return new ResponseEntity<>(service.login(loginRequestDto), HttpStatus.OK);
 	}
 
 	@PutMapping("/logout")
-	public ResponseEntity<LogoutResponseDto> logout(LogoutRequestDto logoutRequestDto, HttpServletRequest httpServletRequest) {
+	public ResponseEntity<LogoutResponseDto> logout(@RequestBody LogoutRequestDto logoutRequestDto, HttpServletRequest httpServletRequest) {
 		String userId = httpServletRequest.getParameter("userId");
 
 		log.info("/logout. logoutRequestDto=" + logoutRequestDto + ", userId=" + userId);
