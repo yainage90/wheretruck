@@ -1,5 +1,7 @@
 package com.gamakdragons.wheretruck.domain.truck.service;
 
+import java.util.List;
+
 import com.gamakdragons.wheretruck.common.DeleteResultDto;
 import com.gamakdragons.wheretruck.common.GeoLocation;
 import com.gamakdragons.wheretruck.common.IndexResultDto;
@@ -14,6 +16,7 @@ public interface TruckService {
     SearchResultDto<Truck> findByGeoLocation(GeoLocation location, float distance);
 
     Truck getById(String id);
+    SearchResultDto<Truck> getByIds(List<String> ids);
 
     IndexResultDto saveTruck(Truck truck);
     UpdateResultDto updateTruck(Truck truck);

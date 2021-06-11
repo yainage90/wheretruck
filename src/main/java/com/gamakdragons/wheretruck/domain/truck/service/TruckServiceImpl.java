@@ -23,6 +23,8 @@ import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.get.MultiGetRequest;
+import org.elasticsearch.action.get.MultiGetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
@@ -71,6 +73,39 @@ public class TruckServiceImpl implements TruckService {
 
         return truck;
     }
+
+    @Override
+    public SearchResultDto<Truck> getByIds(List<String> ids) {
+
+        MultiGetRequest request = EsRequestFactory.createMultiGetRequest(TRUCK_INDEX_NAME, ids);
+        MultiGetResponse response;
+        try {
+            response = restClient.multiGet(request, RequestOptions.DEFAULT);
+        } catch (IOException e) {
+            log.error("IOException occured.");
+            return null;
+        }
+
+        List<Truck> trucks = Arrays.stream(response.getResponses())
+                                    .map(
+                                        item -> 
+                                            Truck.builder()
+                                                .id(item.getResponse().getField("id").getValue()) 
+                                                .name(item.getResponse().getField("name").getValue())
+                                                .opened(item.getResponse().getField("opened").getValue())
+                                                .numRating(item.getResponse().getField("numRating").getValue())
+                                                .starAvg(item.getResponse().getField("starAvg").getValue())
+                                                .build()
+                                    )
+                                    .collect(Collectors.toList());
+
+        return SearchResultDto.<Truck> builder()
+                .status("OK")
+                .numFound(trucks.size())
+                .docs(trucks)
+                .build();
+    }
+    
 
     @Override
     public SearchResultDto<Truck> findAll() {

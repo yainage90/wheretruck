@@ -1,5 +1,7 @@
 package com.gamakdragons.wheretruck.domain.truck.controller;
 
+import java.util.List;
+
 import javax.servlet.http.HttpServletRequest;
 
 import com.gamakdragons.wheretruck.common.DeleteResultDto;
@@ -39,6 +41,13 @@ public class TruckController {
         Truck truck = truckService.getById(id);
 
         return new ResponseEntity<>(truck, HttpStatus.OK);
+    }
+
+    @GetMapping("/{ids}")
+    public ResponseEntity<SearchResultDto<Truck>> getByIds(@PathVariable List<String> ids) {
+        log.info("/api/truck/" + ids);
+
+        return new ResponseEntity<>(truckService.getByIds(ids), HttpStatus.OK);
     }
 
     @GetMapping("/all" )
