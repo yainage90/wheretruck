@@ -1,5 +1,7 @@
 package com.gamakdragons.wheretruck.domain.truck.controller;
 
+import javax.servlet.http.HttpServletRequest;
+
 import com.gamakdragons.wheretruck.common.DeleteResultDto;
 import com.gamakdragons.wheretruck.common.GeoLocation;
 import com.gamakdragons.wheretruck.common.IndexResultDto;
@@ -23,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
-@RequestMapping("/truck")
+@RequestMapping("/api/truck")
 @Slf4j
 public class TruckController {
 
@@ -53,8 +55,10 @@ public class TruckController {
         return new ResponseEntity<>(truckService.findByGeoLocation(location, distance), HttpStatus.OK);
     }
 
-    @GetMapping("/user")
-    public ResponseEntity<SearchResultDto<Truck>> getByUserId(String userId) {
+    @GetMapping("/my")
+    public ResponseEntity<SearchResultDto<Truck>> getByUserId(HttpServletRequest request) {
+        String userId = request.getAttribute("userId").toString();
+
         log.info("/truck/user. userId=" + userId);
 
         return new ResponseEntity<>(truckService.findByUserId(userId), HttpStatus.OK);

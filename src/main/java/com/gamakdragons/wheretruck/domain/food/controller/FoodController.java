@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
-@RequestMapping("/food")
+@RequestMapping("/api/food")
 @Slf4j
 public class FoodController {
 

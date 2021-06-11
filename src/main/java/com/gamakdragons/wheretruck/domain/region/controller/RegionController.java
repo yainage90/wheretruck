@@ -17,7 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 
 
 @RestController
-@RequestMapping("/region")
+@RequestMapping("/api/region")
 @Slf4j
 public class RegionController {
     

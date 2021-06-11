@@ -1,5 +1,7 @@
 package com.gamakdragons.wheretruck.domain.rating.controller;
 
+import javax.servlet.http.HttpServletRequest;
+
 import com.gamakdragons.wheretruck.common.SearchResultDto;
 import com.gamakdragons.wheretruck.common.UpdateResultDto;
 import com.gamakdragons.wheretruck.domain.rating.dto.MyRatingDto;
@@ -21,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
-@RequestMapping("/rating")
+@RequestMapping("/api/rating")
 @Slf4j
 public class RatingController {
     
@@ -50,8 +52,10 @@ public class RatingController {
         return new ResponseEntity<>(service.deleteRating(truckId, id), HttpStatus.OK);
     }
 
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<SearchResultDto<MyRatingDto>> findByUserId(@PathVariable String userId) {
+    @GetMapping("/my")
+    public ResponseEntity<SearchResultDto<MyRatingDto>> findByUserId(HttpServletRequest request) {
+        String userId = request.getAttribute("userId").toString();
+
         log.info("/rating/user/" + userId);
 
         return new ResponseEntity<>(service.findByUserId(userId), HttpStatus.OK);
