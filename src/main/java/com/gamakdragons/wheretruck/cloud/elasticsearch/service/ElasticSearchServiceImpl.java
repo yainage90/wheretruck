@@ -6,6 +6,8 @@ import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.get.MultiGetRequest;
+import org.elasticsearch.action.get.MultiGetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
@@ -32,6 +34,11 @@ public class ElasticSearchServiceImpl implements ElasticSearchService {
     @Override
     public GetResponse get(GetRequest request, RequestOptions options) throws IOException {
         return esClient.get(request, options);
+    }
+
+    @Override
+    public MultiGetResponse multiGet(MultiGetRequest request, RequestOptions options) throws IOException {
+        return esClient.mget(request, options);
     }
 
     @Override

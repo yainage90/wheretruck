@@ -6,6 +6,8 @@ import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.get.MultiGetRequest;
+import org.elasticsearch.action.get.MultiGetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
@@ -17,6 +19,7 @@ import org.elasticsearch.client.RequestOptions;
 public interface ElasticSearchService {
 
     GetResponse get(GetRequest request, RequestOptions options) throws IOException;
+    MultiGetResponse multiGet(MultiGetRequest request, RequestOptions options) throws IOException;
 
     SearchResponse search(SearchRequest searchRequest, RequestOptions options) throws IOException;
 
