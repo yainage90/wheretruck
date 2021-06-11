@@ -1,11 +1,14 @@
 package com.gamakdragons.wheretruck.util;
 
+import java.util.List;
+
 import com.gamakdragons.wheretruck.common.GeoLocation;
 import com.google.gson.Gson;
 
 import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.get.GetRequest;
+import org.elasticsearch.action.get.MultiGetRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.update.UpdateRequest;
@@ -20,6 +23,7 @@ import org.elasticsearch.index.query.TermQueryBuilder;
 import org.elasticsearch.index.reindex.DeleteByQueryRequest;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
 import org.elasticsearch.search.sort.GeoDistanceSortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortMode;
@@ -168,6 +172,22 @@ public class EsRequestFactory {
 
     public static GetRequest createGetRequest(String indexName, String id) {
         return new GetRequest(indexName, id);
+    }
+
+    public static MultiGetRequest createMultiGetRequest(String indexName, List<String> ids) {
+
+        MultiGetRequest request = new MultiGetRequest();
+
+        String[] includes = new String[]{"id", "name", "opened", "numRating", "starAvg"};
+        String[] excludes = new String[]{"geoLocation", "description", "userId", "foods", "ratings"};
+
+        final FetchSourceContext fetchSourceContext = new FetchSourceContext(true, includes, excludes);
+
+        ids.stream().forEach(id -> {
+            request.add(new MultiGetRequest.Item(indexName, id).fetchSourceContext(fetchSourceContext));
+        });
+
+        return request;
     }
 
     public static IndexRequest createIndexRequest(String indexName, String id, Object object) {
