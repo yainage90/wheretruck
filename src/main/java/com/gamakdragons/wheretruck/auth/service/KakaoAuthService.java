@@ -49,16 +49,16 @@ public class KakaoAuthService implements OAuth2Service {
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
         headers.set("Authorization", authType + " " + loginRequestDto.getAccessToken());
 
-        MultiValueMap<String, Object> params = new LinkedMultiValueMap<>();
-        params.add("property_keys", new String[]{"id"});
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
 
-        HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(params, headers);
+        HttpEntity<?> httpEntity = new HttpEntity<>(params, headers);
 
-        String userId = restTemplate.postForObject(kakaoAuthUrl, entity, KaKaoUserInfoResponse.class).getId();
+        String userId = restTemplate.postForObject(kakaoAuthUrl, httpEntity, KaKaoUserInfoResponse.class).getId();
         
         log.info("userId=" + userId);
 
         User user = userService.getById(userId);
+        log.info("user exists: " + user);
 
         if(user == null) {
             user = User.builder()
