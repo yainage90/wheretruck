@@ -11,7 +11,7 @@ import lombok.ToString;
 @ToString
 public class LoginRequestDto {
     
-    private String accessToken;
+    private String authToken;
     private String nickName;
     private Role role;
 }
