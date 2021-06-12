@@ -459,23 +459,31 @@ public class FoodServiceImplTest {
 
     private List<Truck> createTestTruckData() {
 
-        Truck truck1 = Truck.builder()
-                            .id(UUID.randomUUID().toString())
-                            .name("truck1")
-                            .geoLocation(new GeoLocation(30, 130))
-                            .description("this is truck1")
-                            .opened(false)
-                            .userId("userid1")
-                            .build();
+        Truck truck1 = new Truck(
+            UUID.randomUUID().toString(), //id
+            "truck1", //name
+            new GeoLocation(30.0f, 130.0f), //geoLocation
+            "this is truck1", //description
+            false, //opened
+            UUID.randomUUID().toString(), //userId
+            0, //numRating
+            0.0f, //starAvg
+            null, //foods
+            null //ratings
+        );
 
-        Truck truck2 = Truck.builder()
-                            .id(UUID.randomUUID().toString())
-                            .name("truck2")
-                            .geoLocation(new GeoLocation(40, 140))
-                            .description("this is truck2")
-                            .opened(true)
-                            .userId("userid2")
-                            .build();
+        Truck truck2 = new Truck(
+            UUID.randomUUID().toString(), //id
+            "truck2", //name
+            new GeoLocation(38.0f, 141.0f), //geoLocation
+            "this is truck1", //description
+            false, //opened
+            UUID.randomUUID().toString(), //userId
+            0, //numRating
+            0.0f, //starAvg
+            null, //foods
+            null //ratings
+        );
 
         return Arrays.asList(truck1, truck2);
     }
