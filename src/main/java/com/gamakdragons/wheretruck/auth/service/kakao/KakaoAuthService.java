@@ -1,16 +1,19 @@
-package com.gamakdragons.wheretruck.auth.service;
+package com.gamakdragons.wheretruck.auth.service.kakao;
 
 import java.util.Collections;
 
-import com.gamakdragons.wheretruck.auth.dto.KaKaoUserInfoResponse;
 import com.gamakdragons.wheretruck.auth.dto.LoginRequestDto;
 import com.gamakdragons.wheretruck.auth.dto.LoginResponseDto;
 import com.gamakdragons.wheretruck.auth.dto.LogoutRequestDto;
 import com.gamakdragons.wheretruck.auth.dto.LogoutResponseDto;
+import com.gamakdragons.wheretruck.auth.dto.kakao.KaKaoUserInfoResponse;
+import com.gamakdragons.wheretruck.auth.service.JwtUtil;
+import com.gamakdragons.wheretruck.auth.service.OAuth2Service;
 import com.gamakdragons.wheretruck.common.IndexResultDto;
 import com.gamakdragons.wheretruck.domain.user.entity.User;
 import com.gamakdragons.wheretruck.domain.user.service.UserService;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -23,13 +26,14 @@ import org.springframework.web.client.RestTemplate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+
+@Qualifier("kakao")
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class KakaoAuthService implements OAuth2Service {
 
     private final RestTemplate restTemplate;
-    private final JwtProvider jwtProvider;
     private final UserService userService;
 
     @Value("${oauth2.provider.kakao.user_info_url}")
@@ -47,7 +51,7 @@ public class KakaoAuthService implements OAuth2Service {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-        headers.set("Authorization", authType + " " + loginRequestDto.getAccessToken());
+        headers.set("Authorization", authType + " " + loginRequestDto.getAuthToken());
 
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
 
@@ -58,9 +62,10 @@ public class KakaoAuthService implements OAuth2Service {
         log.info("userId=" + userId);
 
         User user = userService.getById(userId);
-        log.info("user exists: " + user);
 
-        if(user == null) {
+        if(user != null) {
+            log.info("user exists: " + user);
+        } else {
             user = User.builder()
                         .id(userId)
                         .nickName(loginRequestDto.getNickName())
@@ -72,7 +77,7 @@ public class KakaoAuthService implements OAuth2Service {
             log.info("user save result: " + result);
         }
         
-        String jwt = jwtProvider.generateToken(userId);
+        String jwt = JwtUtil.generateToken(userId);
         log.info("jwt=" + jwt);
 
         return LoginResponseDto.builder()

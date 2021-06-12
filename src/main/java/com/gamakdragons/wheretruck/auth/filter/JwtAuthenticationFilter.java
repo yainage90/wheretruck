@@ -11,17 +11,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.gamakdragons.wheretruck.auth.exception.JwtException;
-import com.gamakdragons.wheretruck.auth.service.JwtProvider;
+import com.gamakdragons.wheretruck.auth.service.JwtUtil;
 
 import org.springframework.http.HttpStatus;
 
 public class JwtAuthenticationFilter implements Filter {
-
-	private final JwtProvider jwtProvider;
-
-	public JwtAuthenticationFilter(JwtProvider jwtProvider) {
-		this.jwtProvider = jwtProvider;
-	}
 
 	@Override
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
@@ -32,7 +26,7 @@ public class JwtAuthenticationFilter implements Filter {
 		final String jwt = req.getHeader("jwt");
 
 		try {
-			String userId = jwtProvider.validate(jwt);
+			String userId = JwtUtil.validate(jwt);
 			req.setAttribute("userId", userId);
 		} catch(JwtException e) {
 			res.sendError(HttpStatus.UNAUTHORIZED.value(), e.getMessage());
