@@ -1,18 +1,20 @@
 package com.gamakdragons.wheretruck.common;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.ToString;
 
-@AllArgsConstructor
 @Getter
-@ToString
-@Builder
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @EqualsAndHashCode
+@ToString
 public class GeoLocation {
     
-    private float lon;
     private float lat;
+    private float lon;
 }

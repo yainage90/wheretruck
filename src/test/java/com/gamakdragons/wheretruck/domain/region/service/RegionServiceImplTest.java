@@ -135,7 +135,7 @@ public class RegionServiceImplTest {
         float region2Lon = regions.get(1).getGeoLocation().getLon() + 0.2f;
 
         SearchResultDto<Region> result = service.findByLocation(
-                GeoLocation.builder().lat(region2Lat).lon(region2Lon).build(), 500
+                new GeoLocation(region2Lat, region2Lon), 500
         );
 
         result.getDocs().forEach(region -> {
@@ -157,7 +157,7 @@ public class RegionServiceImplTest {
         float region2Lon = regions.get(1).getGeoLocation().getLon() + 0.000001f;
 
         SearchResultDto<Region> result = service.findByLocation(
-            GeoLocation.builder().lat(region2Lat).lon(region2Lon).build(), 10
+            new GeoLocation(region2Lat, region2Lon), 10
         );
 
         result.getDocs().forEach(region -> {
@@ -178,7 +178,7 @@ public class RegionServiceImplTest {
         float pivotLat = regions.get(0).getGeoLocation().getLat() - 10.0f;
         float pivotLon = regions.get(0).getGeoLocation().getLon() - 10.0f;
 
-        SearchResultDto<Region> result = service.findByLocation(GeoLocation.builder().lat(pivotLat).lon(pivotLon).build(), 10.0f);
+        SearchResultDto<Region> result = service.findByLocation(new GeoLocation(pivotLat, pivotLon), 10.0f);
         log.info(result.toString());
 
         assertThat(result.getStatus(), is("OK"));
@@ -352,16 +352,16 @@ public class RegionServiceImplTest {
         Region region1 = Region.builder()
                             .regionName("region1")
                             .city("서울특별시").town("관악구")
-                            .geoLocation(GeoLocation.builder().lat(30.0f).lon(130.0f).build())
+                            .geoLocation(new GeoLocation(30.0f, 130.0f))
                             .build();
         Region region2 = Region.builder()
                             .regionName("region2")
-                            .geoLocation(GeoLocation.builder().lat(31.0f).lon(131.0f).build())
+                            .geoLocation(new GeoLocation(31.0f, 131.0f))
                             .build();
         
         Region region3 = Region.builder()
                             .regionName("region3")
-                            .geoLocation(GeoLocation.builder().lat(32.0f).lon(132.0f).build())
+                            .geoLocation(new GeoLocation(32.0f, 132.0f))
                             .build();
 
         return Arrays.asList(region1, region2, region3);

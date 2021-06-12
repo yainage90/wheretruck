@@ -43,7 +43,7 @@ public class TruckController {
         return new ResponseEntity<>(truck, HttpStatus.OK);
     }
 
-    @GetMapping("/{ids}")
+    @GetMapping("/favorite/{ids}")
     public ResponseEntity<SearchResultDto<Truck>> getByIds(@PathVariable List<String> ids) {
         log.info("/api/truck/" + ids);
 
@@ -65,7 +65,7 @@ public class TruckController {
     }
 
     @GetMapping("/my")
-    public ResponseEntity<SearchResultDto<Truck>> getByUserId(HttpServletRequest request) {
+    public ResponseEntity<SearchResultDto<Truck>> my(HttpServletRequest request) {
         String userId = request.getAttribute("userId").toString();
 
         log.info("/truck/user. userId=" + userId);

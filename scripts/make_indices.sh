@@ -168,10 +168,7 @@ curl -XPUT 'http://ec2-13-209-181-246.ap-northeast-2.compute.amazonaws.com:9200/
       "id": {
         "type": "keyword"
       },
-      "email": {
-        "type": "keyword"
-      },
-      "name": {
+      "role": {
         "type": "keyword"
       },
       "nickName": {

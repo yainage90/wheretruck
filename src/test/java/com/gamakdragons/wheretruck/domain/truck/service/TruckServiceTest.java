@@ -67,7 +67,7 @@ public class TruckServiceTest {
     private RatingService ratingService;
     
     @Value("${elasticsearch.index.truck.name}")
-    private String TEST_TRUCK_INDEX_NAME;
+    private String TEST_TRUCK_INDEX;
 
     @Value("${elasticsearch.host}")
     private String ES_HOST;
@@ -105,27 +105,18 @@ public class TruckServiceTest {
         SearchResultDto<Truck> result = truckService.findAll();
         log.info(result.toString());
 
+        //saveTruck() 에서 foods, ratings가 emptyList로 설정됨.
+        //findsAll() 에서는 excludes에 foods, ratings 필드 포함
+        testTrucks.forEach(truck -> {
+            truck.setFoods(null);
+            truck.setRatings(null);
+        });
         
         assertThat(result.getStatus(), is("OK"));
         assertThat(result.getNumFound(), is(2));
 
-        List<Truck> expectedTrucks = testTrucks.stream()
-            .map(truck -> Truck.builder()
-                            .id(truck.getId())
-                            .name(truck.getName())
-                            .geoLocation(truck.getGeoLocation())
-                            .description(truck.getDescription())
-                            .opened(truck.isOpened())
-                            .userId(truck.getUserId())
-                            .numRating(truck.getNumRating())
-                            .starAvg(truck.getStarAvg())
-                            .foods(null)
-                            .ratings(null)
-                            .build())
-            .collect(Collectors.toList());
-
-        expectedTrucks.forEach(expectedTruck -> {
-            assertThat(result.getDocs(), hasItem(expectedTruck));
+        testTrucks.forEach(truck -> {
+            assertThat(result.getDocs(), hasItem(truck));
         });
     }
 
@@ -136,11 +127,7 @@ public class TruckServiceTest {
         indexTestTruckData(testTrucks);
 
         SearchResultDto<Truck> result = truckService.findByGeoLocation(
-            GeoLocation.builder()
-                .lat(testTrucks.get(0).getGeoLocation().getLat() + 0.1f)
-                .lon(testTrucks.get(0).getGeoLocation().getLon() + 0.1f)
-                .build(), 
-            100
+            new GeoLocation(testTrucks.get(0).getGeoLocation().getLat() + 0.1f, testTrucks.get(0).getGeoLocation().getLon() + 0.1f), 100
         );
 
         log.info(result.toString());
@@ -150,22 +137,12 @@ public class TruckServiceTest {
 
         List<Truck> expectedTrucks = testTrucks.stream()
             .filter(truck -> truck.getId().equals(testTrucks.get(0).getId()))
-            .map(truck -> Truck.builder()
-            .id(truck.getId())
-            .name(truck.getName())
-            .geoLocation(truck.getGeoLocation())
-            .description(truck.getDescription())
-            .opened(truck.isOpened())
-            .userId(truck.getUserId())
-            .numRating(truck.getNumRating())
-            .starAvg(truck.getStarAvg())
-            .foods(null)
-            .ratings(null)
-            .build())
             .collect(Collectors.toList());
 
-        expectedTrucks.forEach(expectedTruck -> {
-            assertThat(result.getDocs(), hasItem(expectedTruck));
+        expectedTrucks.forEach(truck -> {
+            truck.setFoods(null);
+            truck.setRatings(null);
+            assertThat(result.getDocs(), hasItem(truck));
         });
     }
 
@@ -183,21 +160,10 @@ public class TruckServiceTest {
 
         List<Truck> expectedTrucks = testTrucks.stream()
             .filter(truck -> truck.getUserId().equals(testTrucks.get(0).getUserId()))
-            .map(truck -> Truck.builder()
-            .id(truck.getId())
-            .name(truck.getName())
-            .geoLocation(truck.getGeoLocation())
-            .description(truck.getDescription())
-            .opened(truck.isOpened())
-            .userId(truck.getUserId())
-            .numRating(truck.getNumRating())
-            .starAvg(truck.getStarAvg())
-            .foods(Collections.emptyList())
-            .ratings(Collections.emptyList())
-            .build())
             .collect(Collectors.toList());
         
         expectedTrucks.forEach(expectedTruck -> {
+
             assertThat(result.getDocs(), hasItem(expectedTruck));
         });
     }
@@ -231,20 +197,12 @@ public class TruckServiceTest {
         Truck result = truckService.getById(testTrucks.get(0).getId());
         log.info(result.toString());
 
-        Truck expectedTruck = Truck.builder()
-                                    .id(testTrucks.get(0).getId())
-                                    .name(testTrucks.get(0).getName())
-                                    .geoLocation(testTrucks.get(0).getGeoLocation())
-                                    .description(testTrucks.get(0).getDescription())
-                                    .opened(testTrucks.get(0).isOpened())
-                                    .userId(testTrucks.get(0).getUserId())
-                                    .numRating(testTrucks.get(0).getNumRating())
-                                    .starAvg(testTrucks.get(0).getStarAvg())
-                                    .foods(Collections.emptyList())
-                                    .ratings(Collections.emptyList())
-                                    .build();
+        testTrucks.forEach(truck -> {
+            truck.setFoods(Collections.emptyList());
+            truck.setRatings(Collections.emptyList());
+        });
 
-        assertThat(result, equalTo(expectedTruck));
+        assertThat(result, equalTo(testTrucks.get(0)));
     }
 
     @Test
@@ -285,7 +243,7 @@ public class TruckServiceTest {
         indexTestTruckData(testTrucks);
 
         String nameToUpdate = "updatedTruck1";
-        GeoLocation geoLocationToUpdate = GeoLocation.builder().lat(30.0f  + (float) Math.random()).lon(130.0f + (float) Math.random()).build();
+        GeoLocation geoLocationToUpdate = new GeoLocation(30.0f + (float) Math.random(), 130.0f + (float) Math.random());
         String descriptionToUpdate = "this is updated truck1";
 
         testTrucks.get(0).setName(nameToUpdate);
@@ -323,7 +281,7 @@ public class TruckServiceTest {
         List<Truck> testTrucks = createTestTruckData();
         indexTestTruckData(testTrucks);
         
-        UpdateResultDto updateResult = truckService.openTruck(testTrucks.get(0).getId(), GeoLocation.builder().lat(33.0f).lon(133.0f).build());
+        UpdateResultDto updateResult = truckService.openTruck(testTrucks.get(0).getId(), new GeoLocation(33.0f, 133.0f));
         assertThat(updateResult.getResult(), is("UPDATED"));
 
         Truck startedTruck = truckService.getById(testTrucks.get(0).getId());
@@ -362,7 +320,7 @@ public class TruckServiceTest {
 
     private void createTestTruckIndex() throws IOException {
 
-        CreateIndexRequest request = new CreateIndexRequest(TEST_TRUCK_INDEX_NAME);
+        CreateIndexRequest request = new CreateIndexRequest(TEST_TRUCK_INDEX);
 
         request.settings(Settings.builder()
             .put("index.number_of_shards", 3)
@@ -527,9 +485,9 @@ public class TruckServiceTest {
     }
 
     private void deleteTestTruckIndex() throws IOException {
-        GetIndexRequest getIndexRequest = new GetIndexRequest(TEST_TRUCK_INDEX_NAME);
+        GetIndexRequest getIndexRequest = new GetIndexRequest(TEST_TRUCK_INDEX);
         if(esClient.indices().exists(getIndexRequest, RequestOptions.DEFAULT)) {
-            DeleteIndexRequest request = new DeleteIndexRequest(TEST_TRUCK_INDEX_NAME);
+            DeleteIndexRequest request = new DeleteIndexRequest(TEST_TRUCK_INDEX);
             AcknowledgedResponse response = esClient.indices().delete(request, RequestOptions.DEFAULT);
             log.info("index deleted: " + response.isAcknowledged());
             if(!response.isAcknowledged()) {
@@ -541,23 +499,31 @@ public class TruckServiceTest {
 
     private List<Truck> createTestTruckData() {
 
-        Truck truck1 = Truck.builder()
-                            .id(UUID.randomUUID().toString())
-                            .name("truck1")
-                            .geoLocation(GeoLocation.builder().lat(30).lon(130).build())
-                            .description("this is truck1")
-                            .opened(false)
-                            .userId("userid1")
-                            .build();
+        Truck truck1 = new Truck(
+            UUID.randomUUID().toString(), //id
+            "truck1", //name
+            new GeoLocation(30.0f, 130.0f), //geoLocation
+            "this is truck1", //description
+            false, //opened
+            UUID.randomUUID().toString(), //userId
+            0, //numRating
+            0.0f, //starAvg
+            null, //foods
+            null //ratings
+        );
 
-        Truck truck2 = Truck.builder()
-                            .id(UUID.randomUUID().toString())
-                            .name("truck2")
-                            .geoLocation(GeoLocation.builder().lat(40).lon(140).build())
-                            .description("this is truck2")
-                            .opened(true)
-                            .userId("userid2")
-                            .build();
+        Truck truck2 = new Truck(
+            UUID.randomUUID().toString(), //id
+            "truck2", //name
+            new GeoLocation(38.0f, 141.0f), //geoLocation
+            "this is truck1", //description
+            false, //opened
+            UUID.randomUUID().toString(), //userId
+            0, //numRating
+            0.0f, //starAvg
+            null, //foods
+            null //ratings
+        );
 
         return Arrays.asList(truck1, truck2);
     }

@@ -1,6 +1,6 @@
 cd ..
 
-./gradlew clean build
+./gradlew clean build -x test
 
 tag="$(date +%Y%m%d%H%M)"
 

@@ -17,7 +17,9 @@ import com.gamakdragons.wheretruck.common.DeleteResultDto;
 import com.gamakdragons.wheretruck.common.IndexResultDto;
 import com.gamakdragons.wheretruck.common.UpdateResultDto;
 import com.gamakdragons.wheretruck.config.ElasticSearchConfig;
-import com.gamakdragons.wheretruck.user.entity.User;
+import com.gamakdragons.wheretruck.domain.user.entity.User;
+import com.gamakdragons.wheretruck.domain.user.service.UserService;
+import com.gamakdragons.wheretruck.domain.user.service.UserServiceImpl;
 
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
@@ -84,8 +86,6 @@ public class UserServiceImplTest {
         deleteTestUserIndex();
     }
 
-    
-
     @Test
     void testGetById() {
 
@@ -108,7 +108,7 @@ public class UserServiceImplTest {
 
         User user = createTestUserData();
 
-        IndexResultDto indexResult = userService.saveUser(user);
+        IndexResultDto indexResult = userService.login(user);
         log.info("user index result: " + indexResult.getResult() + ", user id: " + indexResult.getId());
 
         assertThat(indexResult.getResult(), is("CREATED"));
@@ -125,7 +125,7 @@ public class UserServiceImplTest {
         String nickNameToUpdate = "updated " + user.getNickName();
         user.setNickName(nickNameToUpdate);
 
-        UpdateResultDto updateResult = userService.updateUser(user);
+        UpdateResultDto updateResult = userService.changeNickName(user);
         try {
             Thread.sleep(2000);
         } catch(InterruptedException e) {
@@ -314,7 +314,7 @@ public class UserServiceImplTest {
     }
 
     private void indexTestUserData(User user) {
-        IndexResultDto indexResult = userService.saveUser(user);
+        IndexResultDto indexResult = userService.login(user);
         assertThat(indexResult.getId(), is(user.getId()));
 
         try {

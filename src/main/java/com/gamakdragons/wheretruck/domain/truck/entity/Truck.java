@@ -6,16 +6,18 @@ import com.gamakdragons.wheretruck.common.GeoLocation;
 import com.gamakdragons.wheretruck.domain.food.entity.Food;
 import com.gamakdragons.wheretruck.domain.rating.entity.Rating;
 
-import lombok.Builder;
+import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @ToString
-@Builder
 @EqualsAndHashCode
 public class Truck {
 

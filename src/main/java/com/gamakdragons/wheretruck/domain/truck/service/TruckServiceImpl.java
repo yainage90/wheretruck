@@ -60,15 +60,19 @@ public class TruckServiceImpl implements TruckService {
     public Truck getById(String id) {
 
         GetRequest request = EsRequestFactory.createGetRequest(TRUCK_INDEX_NAME, id);
-        GetResponse getResponse;
+        GetResponse response;
         try {
-            getResponse = restClient.get(request, RequestOptions.DEFAULT);
+            response = restClient.get(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error("IOException occured.");
             return null;
         }
 
-        Truck truck = new Gson().fromJson(getResponse.getSourceAsString(), Truck.class);
+        if(!response.isExists()) {
+            return null;
+        }
+
+        Truck truck = new Gson().fromJson(response.getSourceAsString(), Truck.class);
         truck.setRatings(truck.getRatings().stream().sorted((r1, r2) -> r2.getCreatedDate().compareTo(r1.getCreatedDate())).collect(Collectors.toList()));
 
         return truck;
@@ -89,13 +93,18 @@ public class TruckServiceImpl implements TruckService {
         List<Truck> trucks = Arrays.stream(response.getResponses())
                                     .map(
                                         item -> 
-                                            Truck.builder()
-                                                .id(item.getResponse().getField("id").getValue()) 
-                                                .name(item.getResponse().getField("name").getValue())
-                                                .opened(item.getResponse().getField("opened").getValue())
-                                                .numRating(item.getResponse().getField("numRating").getValue())
-                                                .starAvg(item.getResponse().getField("starAvg").getValue())
-                                                .build()
+                                            new Truck(
+                                                item.getResponse().getField("id").getValue(),
+                                                item.getResponse().getField("name").getValue(),
+                                                null,
+                                                null,
+                                                item.getResponse().getField("opened").getValue(),
+                                                null,
+                                                item.getResponse().getField("numRating").getValue(),
+                                                item.getResponse().getField("starAvg").getValue(),
+                                                null,
+                                                null
+                                            )
                                     )
                                     .collect(Collectors.toList());
 
