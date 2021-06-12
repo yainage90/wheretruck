@@ -4,12 +4,12 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import com.gamakdragons.wheretruck.cloud.aws.service.S3Service;
 import com.gamakdragons.wheretruck.cloud.elasticsearch.service.ElasticSearchServiceImpl;
 import com.gamakdragons.wheretruck.common.UpdateResultDto;
 import com.gamakdragons.wheretruck.domain.food.dto.FoodSaveRequestDto;
-import com.gamakdragons.wheretruck.domain.food.dto.FoodUpdateRequestDto;
 import com.gamakdragons.wheretruck.domain.food.entity.Food;
 import com.gamakdragons.wheretruck.util.EsRequestFactory;
 
@@ -49,15 +49,27 @@ public class FoodServiceImpl implements FoodService {
         Food food = foodSaveRequestDto.toEntity();
         if(foodSaveRequestDto.getImage() != null) {
             String foodImageUrl = s3Service.uploadFoodImage(FOOD_IMAGE_BUCKET, truckId, food.getId(), foodSaveRequestDto.getImage());
+            log.info("image uploaded to s3 bucket. url=" + foodImageUrl);
             food.setImageUrl(foodImageUrl);
         }
         log.info("food: " + food);
 
+        String script;
+        if(food.getId() == null) {
+            food.setId(UUID.randomUUID().toString());
+            script = "if(ctx._source.foods == null) {ctx._source.foods = new ArrayList();}" + 
+                        "ctx._source.foods.add(params.food);";
+        } else {
+            script = "def target = ctx._source.foods.find(food -> food.id == params.food.id);" +
+                           "target.name = params.food.name;" + 
+                           "target.cost = params.food.cost;" +
+                           "target.description = params.food.description;" +
+                           "target.imageUrl = params.food.imageUrl;";   
+        }
+
         Map<String, Object> params = new HashMap<>();
         params.put("food", food.toMap());
-
-        String script = "if(ctx._source.foods == null) {ctx._source.foods = new ArrayList();}" + 
-                        "ctx._source.foods.add(params.food);";
+        
         Script inline = new Script(ScriptType.INLINE, "painless", script, params);
 
         UpdateRequest request = EsRequestFactory.createUpdateWithScriptRequest(TRUCK_INDEX, truckId, inline);
@@ -79,13 +91,16 @@ public class FoodServiceImpl implements FoodService {
                 .build();
     }
 
-    @Override
+    /*@Override
     public UpdateResultDto updateFood(String truckId, FoodUpdateRequestDto foodUpdateRequestDto) {
 
         Food food = foodUpdateRequestDto.toEntity();
-        String foodImageUrl = s3Service.uploadFoodImage(FOOD_IMAGE_BUCKET, truckId, food.getId(), foodUpdateRequestDto.getImage());
-        log.info("image uploaded to s3 bucket. url=" + foodImageUrl);
-        food.setImageUrl(foodImageUrl);
+
+        if(foodUpdateRequestDto.getImage() != null) {
+            String foodImageUrl = s3Service.uploadFoodImage(FOOD_IMAGE_BUCKET, truckId, food.getId(), foodUpdateRequestDto.getImage());
+            log.info("image uploaded to s3 bucket. url=" + foodImageUrl);
+            food.setImageUrl(foodImageUrl);
+        }
 
         Map<String, Object> params = new HashMap<>();
         params.put("food", food.toMap());
@@ -112,7 +127,7 @@ public class FoodServiceImpl implements FoodService {
                 .result(response.getResult().name())
                 .id(food.getId())
                 .build();
-    }
+    }*/
     
     @Override
     public UpdateResultDto deleteFood(String truckId, String id) {

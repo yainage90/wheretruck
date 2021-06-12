@@ -18,7 +18,6 @@ public class Food {
     
     private String id;
     private String name;
-    //private int index;
     private int cost;
     private String description;
     private String imageUrl;

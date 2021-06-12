@@ -1,18 +1,20 @@
 package com.gamakdragons.wheretruck.domain.food.dto;
 
-import java.util.UUID;
-
 import com.gamakdragons.wheretruck.domain.food.entity.Food;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 
 @Getter
 @Setter
 @NoArgsConstructor
+@ToString
+@EqualsAndHashCode
 public class FoodSaveRequestDto {
     
     private String id;
@@ -22,8 +24,9 @@ public class FoodSaveRequestDto {
     private MultipartFile image;
 
     public Food toEntity() {
+
         return Food.builder()
-                    .id(UUID.randomUUID().toString())
+                    .id(getId())
                     .name(getName())
                     .cost(getCost())
                     .description(getDescription())
