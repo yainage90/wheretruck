@@ -35,7 +35,6 @@ import com.gamakdragons.wheretruck.common.UpdateResultDto;
 import com.gamakdragons.wheretruck.config.ElasticSearchConfig;
 import com.gamakdragons.wheretruck.config.S3Config;
 import com.gamakdragons.wheretruck.domain.food.dto.FoodSaveRequestDto;
-import com.gamakdragons.wheretruck.domain.food.dto.FoodUpdateRequestDto;
 import com.gamakdragons.wheretruck.domain.food.entity.Food;
 import com.gamakdragons.wheretruck.domain.truck.entity.Truck;
 import com.gamakdragons.wheretruck.domain.truck.service.TruckService;
@@ -146,7 +145,7 @@ public class FoodServiceImplTest {
         assertThat(truck.getFoods(), hasSize(2));
     }
 
-    @Test
+    /*@Test
     void testUpdateFood() {
 
         List<Truck> trucks = createTestTruckData();
@@ -196,7 +195,7 @@ public class FoodServiceImplTest {
         } catch(InterruptedException e) {
             e.printStackTrace();
         }
-    }
+    }*/
 
     @Test
     void testDeleteFood() {
