@@ -81,6 +81,7 @@ public class JwtUtil {
 
     }
 
+    @SuppressWarnings("unchecked")
     public static String parseUserIdFormAppleJwt(String identityToken, ApplePublicKeyResponse applePublicKeyResponse) {
 
         String headerOfIdentityToken = identityToken.substring(0, identityToken.indexOf("."));
