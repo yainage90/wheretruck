@@ -1,60 +1,72 @@
 package com.gamakdragons.wheretruck.domain.truck.service;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.number.IsCloseTo.closeTo;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import com.amazonaws.AmazonServiceException;
+import com.amazonaws.SdkClientException;
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.regions.Regions;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.DeleteBucketRequest;
+import com.amazonaws.services.s3.model.ObjectListing;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
+import com.gamakdragons.wheretruck.TestIndexUtil;
+import com.gamakdragons.wheretruck.cloud.aws.service.S3ServiceImpl;
 import com.gamakdragons.wheretruck.cloud.elasticsearch.service.ElasticSearchServiceImpl;
 import com.gamakdragons.wheretruck.common.DeleteResultDto;
 import com.gamakdragons.wheretruck.common.GeoLocation;
-import com.gamakdragons.wheretruck.common.IndexResultDto;
+import com.gamakdragons.wheretruck.common.IndexUpdateResultDto;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
 import com.gamakdragons.wheretruck.common.UpdateResultDto;
 import com.gamakdragons.wheretruck.config.ElasticSearchConfig;
+import com.gamakdragons.wheretruck.config.S3Config;
+import com.gamakdragons.wheretruck.domain.favorite.entity.Favorite;
+import com.gamakdragons.wheretruck.domain.favorite.service.FavoriteService;
+import com.gamakdragons.wheretruck.domain.favorite.service.FavoriteServiceImpl;
+import com.gamakdragons.wheretruck.domain.food.dto.FoodSaveRequestDto;
+import com.gamakdragons.wheretruck.domain.food.service.FoodService;
+import com.gamakdragons.wheretruck.domain.food.service.FoodServiceImpl;
 import com.gamakdragons.wheretruck.domain.rating.entity.Rating;
 import com.gamakdragons.wheretruck.domain.rating.service.RatingService;
 import com.gamakdragons.wheretruck.domain.rating.service.RatingServiceImpl;
+import com.gamakdragons.wheretruck.domain.truck.dto.TruckSaveRequestDto;
 import com.gamakdragons.wheretruck.domain.truck.entity.Truck;
 
-import org.apache.http.HttpHost;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.CredentialsProvider;
-import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestClientBuilder;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.client.indices.CreateIndexRequest;
-import org.elasticsearch.client.indices.CreateIndexResponse;
-import org.elasticsearch.client.indices.GetIndexRequest;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.common.xcontent.XContentFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 
 import lombok.extern.slf4j.Slf4j;
 
 @SpringBootTest(
-    classes = {TruckServiceImpl.class, ElasticSearchServiceImpl.class, ElasticSearchConfig.class, RatingServiceImpl.class}, 
+    classes = {TruckServiceImpl.class, ElasticSearchServiceImpl.class, ElasticSearchConfig.class,
+                RatingServiceImpl.class, S3ServiceImpl.class, S3Config.class, FoodServiceImpl.class, FavoriteServiceImpl.class, TestIndexUtil.class}, 
     properties = {"spring.config.location=classpath:application-test.yml"}
 )
 @Slf4j
@@ -66,116 +78,130 @@ public class TruckServiceTest {
     @Autowired
     private RatingService ratingService;
     
+    @Autowired
+    private FavoriteService favoriteService;
+    
+    @Autowired
+    private FoodService foodService;
+    
     @Value("${elasticsearch.index.truck.name}")
     private String TEST_TRUCK_INDEX;
 
-    @Value("${elasticsearch.host}")
-    private String ES_HOST;
+    private AmazonS3 s3Client;
 
-    @Value("${elasticsearch.port}")
-    private int ES_PORT;
+    @Value("${cloud.aws.credentials.accessKey}")
+    private String accessKey;
 
-    @Value("${elasticsearch.username}")
-    private String ES_USER;
+    @Value("${cloud.aws.credentials.secretKey}")
+    private String secretKey;
 
-    @Value("${elasticsearch.password}")
-    private String ES_PASSWORD;
+    @Value("${cloud.aws.s3.bucket.truck_image}")
+    private String TRUCK_IMAGE_BUCKET;
 
-
-    private RestHighLevelClient esClient;
+    @Value("${cloud.aws.s3.bucket.food_image}")
+    private String FOOD_IMAGE_BUCKET;
 
     @BeforeEach
     public void beforeEach() throws IOException {
-        initRestHighLevelClient();
-        deleteTestTruckIndex();
-        createTestTruckIndex();
+        TestIndexUtil.initRestHighLevelClient();
+        TestIndexUtil.deleteTestIndices();
+        TestIndexUtil.createTestIndices();
+
+        initS3Client();
     }
 
     @AfterEach
     public void afterEach() throws IOException {
-        deleteTestTruckIndex();
+        TestIndexUtil.deleteTestIndices();
+
+        deleteAllBucketObjects();
+        deleteS3Bucket(TRUCK_IMAGE_BUCKET);
     }
 
     @Test
     void testFindAll() {
 
-        List<Truck> testTrucks = createTestTruckData();
-        indexTestTruckData(testTrucks);
+        List<TruckSaveRequestDto> dtos = createTestTruckSaveRequestDtos();
+        List<String> truckIds = indexTestTruckData(dtos);
 
         SearchResultDto<Truck> result = truckService.findAll();
-        log.info(result.toString());
 
-        //saveTruck() 에서 foods, ratings가 emptyList로 설정됨.
-        //findsAll() 에서는 excludes에 foods, ratings 필드 포함
-        testTrucks.forEach(truck -> {
-            truck.setFoods(null);
-            truck.setRatings(null);
-        });
-        
         assertThat(result.getStatus(), is("OK"));
-        assertThat(result.getNumFound(), is(2));
+        assertThat(result.getNumFound(), is(dtos.size()));
+        List<String> retrievedIds = result.getDocs().stream().map(truck -> truck.getId()).collect(Collectors.toList());
 
-        testTrucks.forEach(truck -> {
-            assertThat(result.getDocs(), hasItem(truck));
+        //check ids
+        truckIds.forEach(truckId -> {
+            assertThat(retrievedIds, hasItem(truckId));
         });
+
+        //check name, description
+        dtos.forEach(dto -> {
+            assertThat(result.getDocs(), hasItem(
+                allOf(
+                    hasProperty("name", is(dto.getName())),
+                    hasProperty("description", is(dto.getDescription()))
+                )
+            ));
+        });
+
+        assertThat(result.getDocs(), hasItem(hasProperty("imageUrl", is(nullValue()))));
+        assertThat(result.getDocs(), hasItem(hasProperty("imageUrl", is(not(nullValue())))));
     }
 
     @Test
-    void testFindByLocation() {
+    void testFindByGeoLocation() {
 
-        List<Truck> testTrucks = createTestTruckData();
-        indexTestTruckData(testTrucks);
+        List<TruckSaveRequestDto> dtos = createTestTruckSaveRequestDtos();
+        List<String> truckIds = indexTestTruckData(dtos);
 
-        SearchResultDto<Truck> result = truckService.findByGeoLocation(
-            new GeoLocation(testTrucks.get(0).getGeoLocation().getLat() + 0.1f, testTrucks.get(0).getGeoLocation().getLon() + 0.1f), 100
-        );
 
-        log.info(result.toString());
-        
+        GeoLocation geo1 = new GeoLocation(30.0f, 130.0f);
+        truckService.openTruck(truckIds.get(0), geo1);
+        GeoLocation geo2 = new GeoLocation(40.0f, 140.0f);
+        truckService.openTruck(truckIds.get(1), geo2);
+
+        try {
+            Thread.sleep(1000);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        SearchResultDto<Truck> result = truckService.findByGeoLocation(geo1, 10.0f); //10km
+
         assertThat(result.getStatus(), is("OK"));
         assertThat(result.getNumFound(), is(1));
-
-        List<Truck> expectedTrucks = testTrucks.stream()
-            .filter(truck -> truck.getId().equals(testTrucks.get(0).getId()))
-            .collect(Collectors.toList());
-
-        expectedTrucks.forEach(truck -> {
-            truck.setFoods(null);
-            truck.setRatings(null);
-            assertThat(result.getDocs(), hasItem(truck));
-        });
+        assertThat(result.getDocs().get(0).getId(), is(truckIds.get(0)));
     }
 
     @Test
     void testFindByUserId() {
 
-        List<Truck> testTrucks = createTestTruckData();
-        indexTestTruckData(testTrucks);
+        List<TruckSaveRequestDto> dtos = createTestTruckSaveRequestDtos();
+        indexTestTruckData(dtos);
 
-        SearchResultDto<Truck> result = truckService.findByUserId(testTrucks.get(0).getUserId());
+        String userIdToFind = dtos.get(0).getUserId();
+
+        SearchResultDto<Truck> result = truckService.findByUserId(userIdToFind);
         log.info(result.toString());
         
         assertThat(result.getStatus(), is("OK"));
-        assertThat(result.getNumFound(), is(1));
 
-        List<Truck> expectedTrucks = testTrucks.stream()
-            .filter(truck -> truck.getUserId().equals(testTrucks.get(0).getUserId()))
-            .collect(Collectors.toList());
-        
-        expectedTrucks.forEach(expectedTruck -> {
-
-            assertThat(result.getDocs(), hasItem(expectedTruck));
+        int dtoCountWithUserId = (int) dtos.stream().filter(dto -> dto.getUserId().equals(userIdToFind)).count();
+        assertThat(result.getNumFound(), is(dtoCountWithUserId));
+        result.getDocs().forEach(truck -> {
+            assertThat(truck.getUserId(), is(userIdToFind));
         });
     }
 
     @Test
     void testFindByUserIdRatingsIsInCreatedDateReverseOrder() {
 
-        List<Truck> trucks = createTestTruckData();
-        indexTestTruckData(trucks);
+        List<TruckSaveRequestDto> trucks = createTestTruckSaveRequestDtos();
+        List<String> truckIds = indexTestTruckData(trucks);
 
         List<Rating> ratings = createTestRatingData();
-        indexTestRatingData(trucks.get(0).getId(), ratings);
+        indexTestRatingData(truckIds.get(0), ratings);
 
         SearchResultDto<Truck> result = truckService.findByUserId(trucks.get(0).getUserId());
         log.info(result.toString());
@@ -191,33 +217,31 @@ public class TruckServiceTest {
     @Test
     void testGetById() {
 
-        List<Truck> testTrucks = createTestTruckData();
-        indexTestTruckData(testTrucks);
+        List<TruckSaveRequestDto> dtos = createTestTruckSaveRequestDtos();
+        List<String> truckIds = indexTestTruckData(dtos);
 
-        Truck result = truckService.getById(testTrucks.get(0).getId());
-        log.info(result.toString());
+        Truck truck = truckService.getById(truckIds.get(0));
+        log.info(truck.toString());
 
-        testTrucks.forEach(truck -> {
-            truck.setFoods(Collections.emptyList());
-            truck.setRatings(Collections.emptyList());
-        });
-
-        assertThat(result, equalTo(testTrucks.get(0)));
+        assertThat(truck.getId(), is(truckIds.get(0)));
+        assertThat(truck.getName(), is(dtos.get(0).getName()));
+        assertThat(truck.getDescription(), is(dtos.get(0).getDescription()));
+        assertThat(truck.getImageUrl(), not(nullValue()));
     }
 
     @Test
     void testGetByIdRatingsIsInCreatedDateReverseOrder() {
 
-        List<Truck> trucks = createTestTruckData();
-        indexTestTruckData(trucks);
+        List<TruckSaveRequestDto> trucks = createTestTruckSaveRequestDtos();
+        List<String> truckIds = indexTestTruckData(trucks);
 
         List<Rating> ratings = createTestRatingData();
-        indexTestRatingData(trucks.get(0).getId(), ratings);
+        indexTestRatingData(truckIds.get(0), ratings);
 
-        Truck resultTruck = truckService.getById(trucks.get(0).getId());
-        log.info(resultTruck.toString());
+        Truck truck = truckService.getById(truckIds.get(0));
+        log.info(truck.toString());
 
-        assertThat(resultTruck.getRatings().stream().map(rating -> rating.getId()).collect(Collectors.toList()),
+        assertThat(truck.getRatings().stream().map(rating -> rating.getId()).collect(Collectors.toList()),
                     contains(ratings.get(2).getId(), ratings.get(1).getId(), ratings.get(0).getId())
         );
     }
@@ -225,85 +249,200 @@ public class TruckServiceTest {
     @Test
     void testSaveTruck() {
 
-        List<Truck> testTrucks = createTestTruckData();
+        List<TruckSaveRequestDto> dtos = createTestTruckSaveRequestDtos();
 
-        testTrucks.stream().forEach(truck -> {
-            IndexResultDto indexResult = truckService.saveTruck(truck);
+        dtos.stream().forEach(dto -> {
+            IndexUpdateResultDto indexResult = truckService.saveTruck(dto);
             log.info("truck index result: " + indexResult.getResult() + ", truck id: " + indexResult.getId());
 
             assertThat(indexResult.getResult(), is("CREATED"));
-            assertThat(indexResult.getId(), is(truck.getId()));
+        });
+
+        try {
+            Thread.sleep(2000);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        List<Truck> trucks = truckService.findAll().getDocs();
+
+        assertThat(trucks.size(), is(dtos.size()));
+        trucks.stream().filter(truck -> truck.getImageUrl() != null).forEach(truck -> {
+            assertThat("트럭 이미지 업로드", s3Client.doesObjectExist(TRUCK_IMAGE_BUCKET, truck.getId()), is(true));
         });
     }
 
     @Test
     void testUpdateTruck() {
 
-        List<Truck> testTrucks = createTestTruckData();
-        indexTestTruckData(testTrucks);
+        List<TruckSaveRequestDto> truckSaveRequestDtos = createTestTruckSaveRequestDtos();
+        List<String> truckIds = indexTestTruckData(truckSaveRequestDtos);
+        assertThat(s3Client.doesObjectExist(TRUCK_IMAGE_BUCKET, truckIds.get(1)), is(false));
 
-        String nameToUpdate = "updatedTruck1";
-        GeoLocation geoLocationToUpdate = new GeoLocation(30.0f + (float) Math.random(), 130.0f + (float) Math.random());
-        String descriptionToUpdate = "this is updated truck1";
+        String nameToUpdate = "updatedTruck2";
+        String descriptionToUpdate = "this is updated truck2";
 
-        testTrucks.get(0).setName(nameToUpdate);
-        testTrucks.get(0).setGeoLocation(geoLocationToUpdate);
-        testTrucks.get(0).setDescription(descriptionToUpdate);
-        UpdateResultDto updateResult = truckService.updateTruck(testTrucks.get(0));
+        TruckSaveRequestDto truckUpdateRequestDto = new TruckSaveRequestDto();
+        truckUpdateRequestDto.setId(truckIds.get(1));
+        truckUpdateRequestDto.setName(nameToUpdate);
+        truckUpdateRequestDto.setDescription(descriptionToUpdate);
+
+        byte[] imageBinary = new byte[128];
+        new Random().nextBytes(imageBinary);
+        MockMultipartFile image = new MockMultipartFile("image", null, MediaType.MULTIPART_FORM_DATA_VALUE, imageBinary);
+        truckUpdateRequestDto.setImage(image);
+
+        IndexUpdateResultDto updateResult = truckService.updateTruck(truckUpdateRequestDto);
         assertThat(updateResult.getResult(), equalTo("UPDATED"));
 
-        Truck updatedTruck = truckService.getById(testTrucks.get(0).getId());
-        assertThat(updatedTruck.getName(), equalTo(nameToUpdate));
-        assertThat(updatedTruck.getGeoLocation(), equalTo(geoLocationToUpdate));
-        assertThat(updatedTruck.getDescription(), equalTo(descriptionToUpdate));
+        try {
+            Thread.sleep(2000);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
 
+        Truck updatedTruck = truckService.getById(truckIds.get(1));
+        assertThat(updatedTruck.getName(), equalTo(nameToUpdate));
+        assertThat(updatedTruck.getDescription(), equalTo(descriptionToUpdate));
+        assertThat(updatedTruck.getImageUrl(), is(not(nullValue())));
+        assertThat(s3Client.doesObjectExist(TRUCK_IMAGE_BUCKET, updatedTruck.getId()), is(true));
     }
 
     @Test
     void testDeleteTruck() {
 
-        List<Truck> testTrucks = createTestTruckData();
-        indexTestTruckData(testTrucks);
+        List<TruckSaveRequestDto> dtos = createTestTruckSaveRequestDtos();
+        List<String> truckIds = indexTestTruckData(dtos);
 
-        DeleteResultDto deleteResult1 = truckService.deleteTruck(testTrucks.get(0).getId());
+        DeleteResultDto deleteResult1 = truckService.deleteTruck(truckIds.get(0));
         assertThat(deleteResult1.getResult(), is("DELETED"));
 
-        DeleteResultDto deleteResult2 = truckService.deleteTruck(testTrucks.get(1).getId());
-        assertThat(deleteResult2.getResult(), is("DELETED"));
+        assertThat(truckService.getById(truckIds.get(0)), nullValue());
+        assertThat(truckService.getById(truckIds.get(1)), not(nullValue()));
 
-        assertThat(truckService.getById(testTrucks.get(0).getId()), nullValue());
-        assertThat(truckService.getById(testTrucks.get(0).getId()), nullValue());
+        assertThat("트럭 이미지 삭제", s3Client.doesObjectExist(TRUCK_IMAGE_BUCKET, truckIds.get(0)), is(false));
+    }
+
+    @Test
+    void testDeleteFoodImagesInS3BucketIfTruckDeleted() {
+
+        TruckSaveRequestDto dto = createTestTruckSaveRequestDtos().get(0);
+        IndexUpdateResultDto indexResult = truckService.saveTruck(dto);
+        String truckId = indexResult.getId();
+
+        assertThat(indexResult.getResult(), is("CREATED"));
+
+        try {
+            Thread.sleep(1500);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        FoodSaveRequestDto foodSaveRequestDto = new FoodSaveRequestDto();
+        foodSaveRequestDto.setName("food");
+        foodSaveRequestDto.setCost(10000);
+        foodSaveRequestDto.setDescription("this is food");
+        byte[] imageBinary = new byte[128];
+        new Random().nextBytes(imageBinary);
+        MockMultipartFile image = new MockMultipartFile("image", null, MediaType.MULTIPART_FORM_DATA_VALUE, imageBinary);
+        foodSaveRequestDto.setImage(image);
+        
+        UpdateResultDto updateResultDto = foodService.saveFood(truckId, foodSaveRequestDto);
+        String foodId = updateResultDto.getId();
+
+        assertThat(updateResultDto.getResult(), is("UPDATED"));
+        assertThat(s3Client.doesObjectExist(FOOD_IMAGE_BUCKET, truckId + "/" + foodId), is(true));
+
+        try {
+            Thread.sleep(1500);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        assertThat(truckService.deleteTruck(truckId).getResult(), is("DELETED"));
+        assertThat(s3Client.doesObjectExist(FOOD_IMAGE_BUCKET, truckId + "/" + foodId), is(false));
+    }
+
+    @Test
+    void testDeleteFavoritesWhenTruckDeleted() {
+
+        TruckSaveRequestDto dto = createTestTruckSaveRequestDtos().get(0);
+        IndexUpdateResultDto indexResult = truckService.saveTruck(dto);
+        String truckId = indexResult.getId();
+
+        assertThat(indexResult.getResult(), is("CREATED"));
+
+        try {
+            Thread.sleep(1500);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        Favorite favorite = new Favorite();
+        favorite.setTruckId(truckId);
+        favorite.setUserId(UUID.randomUUID().toString());
+
+        assertThat(favoriteService.saveFavorite(favorite).getResult(), is("CREATED"));
+
+        assertThat(favoriteService.findByTruckId(truckId).getNumFound(), is(1));
+
+        assertThat(truckService.deleteTruck(truckId).getResult(), is("DELETED"));
+
+        try {
+            Thread.sleep(1500);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        assertThat(favoriteService.findByTruckId(truckId).getNumFound(), is(0));
     }
 
     @Test
     void testOpenTruck() {
 
-        List<Truck> testTrucks = createTestTruckData();
-        indexTestTruckData(testTrucks);
+        List<TruckSaveRequestDto> testTrucks = createTestTruckSaveRequestDtos();
+        List<String> truckIds = indexTestTruckData(testTrucks);
         
-        UpdateResultDto updateResult = truckService.openTruck(testTrucks.get(0).getId(), new GeoLocation(33.0f, 133.0f));
+        GeoLocation openLocation = new GeoLocation(33.0f, 133.0f);
+        IndexUpdateResultDto updateResult = truckService.openTruck(truckIds.get(0), openLocation);
         assertThat(updateResult.getResult(), is("UPDATED"));
 
-        Truck startedTruck = truckService.getById(testTrucks.get(0).getId());
+    try {
+            Thread.sleep(2000);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        Truck startedTruck = truckService.getById(truckIds.get(0));
         assertThat(startedTruck.isOpened(), is(true));
-        assertThat((double) startedTruck.getGeoLocation().getLat(), closeTo(33.0f, 0.001f));
-        assertThat((double) startedTruck.getGeoLocation().getLon(), closeTo(133.0f, 0.001f));
+        assertThat((double) startedTruck.getGeoLocation().getLat(), closeTo(openLocation.getLat(), 0.001f));
+        assertThat((double) startedTruck.getGeoLocation().getLon(), closeTo(openLocation.getLon(), 0.001f));
     }
 
     @Test
     void testStopTruck() {
 
-        List<Truck> testTrucks = createTestTruckData();
-        indexTestTruckData(testTrucks);
-
-        UpdateResultDto updateResult = truckService.stopTruck(testTrucks.get(1).getId());
+        List<TruckSaveRequestDto> testTrucks = createTestTruckSaveRequestDtos();
+        List<String> truckIds = indexTestTruckData(testTrucks);
+        
+        GeoLocation openLocation = new GeoLocation(33.0f, 133.0f);
+        IndexUpdateResultDto updateResult = truckService.openTruck(truckIds.get(0), openLocation);
         assertThat(updateResult.getResult(), is("UPDATED"));
 
-        Truck stoppedTruck = truckService.getById(testTrucks.get(1).getId());
+        try {
+            Thread.sleep(2000);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        IndexUpdateResultDto stopResult = truckService.stopTruck(truckIds.get(0));
+        assertThat(stopResult.getResult(), is("UPDATED"));
+
+        Truck stoppedTruck = truckService.getById(truckIds.get(0));
         assertThat(stoppedTruck.isOpened(), is(false));
     }
 
-    private void initRestHighLevelClient() {
+    /*private void initRestHighLevelClient() {
 
         CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
         credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(ES_USER, ES_PASSWORD));
@@ -377,6 +516,12 @@ public class TruckServiceTest {
                 builder.startObject("starAvg");
                 {
                     builder.field("type", "float");
+                }
+                builder.endObject();
+
+                builder.startObject("imageUrl");
+                {
+                    builder.field("type", "keyword");
                 }
                 builder.endObject();
 
@@ -495,45 +640,37 @@ public class TruckServiceTest {
             }
         }
 
+    }*/
+
+    private List<TruckSaveRequestDto> createTestTruckSaveRequestDtos() {
+
+        byte[] imageBinary1 = new byte[128];
+        new Random().nextBytes(imageBinary1);
+        MockMultipartFile image1 = new MockMultipartFile("image1", null, MediaType.MULTIPART_FORM_DATA_VALUE, imageBinary1);
+
+        TruckSaveRequestDto dto1 = new TruckSaveRequestDto();
+        dto1.setName("truck1");
+        dto1.setDescription("this is truck1");
+        dto1.setUserId("user1");
+        dto1.setImage(image1);
+
+        TruckSaveRequestDto dto2 = new TruckSaveRequestDto();
+        dto2.setName("truck2");
+        dto2.setDescription("this is truck2");
+        dto2.setUserId("user2");
+
+        return Arrays.asList(dto1, dto2);
     }
 
-    private List<Truck> createTestTruckData() {
+    private List<String> indexTestTruckData(List<TruckSaveRequestDto> dtos) {
 
-        Truck truck1 = new Truck(
-            UUID.randomUUID().toString(), //id
-            "truck1", //name
-            new GeoLocation(30.0f, 130.0f), //geoLocation
-            "this is truck1", //description
-            false, //opened
-            UUID.randomUUID().toString(), //userId
-            0, //numRating
-            0.0f, //starAvg
-            null, //foods
-            null //ratings
-        );
-
-        Truck truck2 = new Truck(
-            UUID.randomUUID().toString(), //id
-            "truck2", //name
-            new GeoLocation(38.0f, 141.0f), //geoLocation
-            "this is truck1", //description
-            false, //opened
-            UUID.randomUUID().toString(), //userId
-            0, //numRating
-            0.0f, //starAvg
-            null, //foods
-            null //ratings
-        );
-
-        return Arrays.asList(truck1, truck2);
-    }
-
-    private void indexTestTruckData(List<Truck> trucks) {
-
-        trucks.forEach(truck -> {
-            IndexResultDto indexResult = truckService.saveTruck(truck);
+        List<String> truckIds = new ArrayList<>();
+        dtos.forEach(dto -> {
+            IndexUpdateResultDto indexResult = truckService.saveTruck(dto);
             log.info("truck index result: " + indexResult.getResult() + ", truck id: " + indexResult.getId());
-            assertThat(indexResult.getId(), is(truck.getId()));
+            assertThat(indexResult.getResult(), is("CREATED"));
+
+            truckIds.add(indexResult.getId());
         });
 
         try {
@@ -541,29 +678,28 @@ public class TruckServiceTest {
         } catch(InterruptedException e) {
             e.printStackTrace();
         }
+
+        return truckIds;
     }
 
     private List<Rating> createTestRatingData() {
 
         String userId = UUID.randomUUID().toString();
+        
+        Rating rating1 = new Rating();
+        rating1.setUserId(userId);
+        rating1.setComment("hello1");
+        rating1.setStar(3.0f);
 
-        Rating rating1 = Rating.builder()
-                                .userId(userId)
-                                .comment("hello1")
-                                .star(3.0f)
-                                .build();
+        Rating rating2 = new Rating();
+        rating2.setUserId(userId);
+        rating2.setComment("hello2");
+        rating2.setStar(5.0f);
 
-        Rating rating2 = Rating.builder()
-                                .userId(userId)
-                                .comment("hello2")
-                                .star(5.0f)
-                                .build();
-
-        Rating rating3 = Rating.builder()
-                                .userId(userId)
-                                .comment("hello3")
-                                .star(1.0f)
-                                .build();
+        Rating rating3 = new Rating();
+        rating3.setUserId(userId);
+        rating3.setComment("hello3");
+        rating3.setStar(1.0f);
 
         return Arrays.asList(rating1, rating2, rating3);
     }
@@ -582,6 +718,58 @@ public class TruckServiceTest {
         }
 
         });
+
+        try {
+            Thread.sleep(2000);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void initS3Client() {
+        AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
+        s3Client = AmazonS3ClientBuilder.standard()
+                .withCredentials(new AWSStaticCredentialsProvider(credentials))
+                .withRegion(Regions.AP_NORTHEAST_2)
+                .build();
+    }
+
+    public void deleteS3Bucket(String bucketName) {
+        if(s3Client.doesBucketExistV2(bucketName)) {
+            s3Client.deleteBucket(new DeleteBucketRequest(bucketName));
+            if(!s3Client.doesBucketExistV2(bucketName)) {
+                log.info("bucket deleted: " + bucketName);
+            } else {
+                log.error("bucket exists but delete bucket failed: " + bucketName);
+            }
+        }
+
+        log.info("bucket does not exist: " + bucketName);
+    }
+
+    private void deleteAllBucketObjects() {
+
+        try {
+            ObjectListing objectListing = s3Client.listObjects(TRUCK_IMAGE_BUCKET);
+            while (true) {
+                Iterator<S3ObjectSummary> objIter = objectListing.getObjectSummaries().iterator();
+                while (objIter.hasNext()) {
+                    s3Client.deleteObject(TRUCK_IMAGE_BUCKET, objIter.next().getKey());
+                }
+
+                if (objectListing.isTruncated()) {
+                    objectListing = s3Client.listNextBatchOfObjects(objectListing);
+                } else {
+                    break;
+                }
+            }
+
+            s3Client.deleteBucket(TRUCK_IMAGE_BUCKET);
+        } catch (AmazonServiceException e) {
+            e.printStackTrace();
+        } catch (SdkClientException e) {
+            e.printStackTrace();
+        }
 
         try {
             Thread.sleep(2000);
