@@ -23,16 +23,15 @@ public class S3ServiceImpl implements S3Service {
     private final AmazonS3 s3Client;
 
     @Override
-    public String uploadFoodImage(String bucketName, String truckId, String foodId, MultipartFile imageFile) {
+    public String uploadImage(String bucketName, String fileName, MultipartFile imageFile) {
 
         if(imageFile == null) {
             return null;
         }
 
-        String fileName = truckId + foodId;
         File foodImageFile = convertToFile(fileName, imageFile);
         s3Client.putObject(new PutObjectRequest(bucketName, fileName, foodImageFile).withCannedAcl(CannedAccessControlList.PublicRead));
-        return getFoodImageUrl(bucketName, truckId, foodId);
+        return getFoodImageUrl(bucketName, fileName);
     }
 
     private File convertToFile(String fileName, MultipartFile multipartFile) {
@@ -49,8 +48,7 @@ public class S3ServiceImpl implements S3Service {
     }
 
     @Override
-    public boolean deleteFoodImage(String bucketName, String truckId, String foodId) {
-        String fileName = truckId + foodId;
+    public boolean deleteImage(String bucketName, String fileName) {
         if(s3Client.doesObjectExist(bucketName, fileName)) {
             s3Client.deleteObject(new DeleteObjectRequest(bucketName, fileName));
         }
@@ -58,8 +56,7 @@ public class S3ServiceImpl implements S3Service {
         return !s3Client.doesObjectExist(bucketName, fileName);
     }
 
-    private String getFoodImageUrl(String bucketName, String truckId, String foodId) {
-        String fileName = truckId + foodId;
+    private String getFoodImageUrl(String bucketName, String fileName) {
         return s3Client.getUrl(bucketName, fileName).toString();
     }
 }
