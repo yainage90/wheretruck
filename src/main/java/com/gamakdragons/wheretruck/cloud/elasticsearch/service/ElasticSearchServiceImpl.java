@@ -16,6 +16,8 @@ import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.index.reindex.BulkByScrollResponse;
+import org.elasticsearch.index.reindex.DeleteByQueryRequest;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
@@ -54,6 +56,11 @@ public class ElasticSearchServiceImpl implements ElasticSearchService {
     @Override
     public DeleteResponse delete(DeleteRequest request, RequestOptions options) throws IOException {
         return esClient.delete(request, options);
+    }
+
+    @Override
+    public BulkByScrollResponse deleteByQuery(DeleteByQueryRequest request, RequestOptions options) throws IOException {
+        return esClient.deleteByQuery(request, options);
     }
 
 }

@@ -15,6 +15,8 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.index.reindex.BulkByScrollResponse;
+import org.elasticsearch.index.reindex.DeleteByQueryRequest;
 
 public interface ElasticSearchService {
 
@@ -26,4 +28,5 @@ public interface ElasticSearchService {
     IndexResponse index(IndexRequest request, RequestOptions options) throws IOException; 
     UpdateResponse update(UpdateRequest request, RequestOptions options) throws IOException;
     DeleteResponse delete(DeleteRequest request, RequestOptions options) throws IOException;
+    BulkByScrollResponse deleteByQuery(DeleteByQueryRequest request, RequestOptions options) throws IOException;
 }
