@@ -145,7 +145,7 @@ public class FoodServiceImplTest {
         assertThat(truck.getFoods(), hasSize(2));
     }
 
-    /*@Test
+    @Test
     void testUpdateFood() {
 
         List<Truck> trucks = createTestTruckData();
@@ -163,14 +163,14 @@ public class FoodServiceImplTest {
             new Random().nextBytes(imageBinary);
             MockMultipartFile imageToUpdate = new MockMultipartFile("file", null, MediaType.MULTIPART_FORM_DATA_VALUE, imageBinary);
 
-            FoodUpdateRequestDto foodUpdateRequestDto = new FoodUpdateRequestDto();
-            foodUpdateRequestDto.setId(food.getId());
-            foodUpdateRequestDto.setName(nameToUpdate);
-            foodUpdateRequestDto.setCost(costToUpdate);
-            foodUpdateRequestDto.setDescription(descriptionToUpdate);
-            foodUpdateRequestDto.setImage(imageToUpdate);
+            FoodSaveRequestDto foodSaveRequestDto = new FoodSaveRequestDto();
+            foodSaveRequestDto.setId(food.getId());
+            foodSaveRequestDto.setName(nameToUpdate);
+            foodSaveRequestDto.setCost(costToUpdate);
+            foodSaveRequestDto.setDescription(descriptionToUpdate);
+            foodSaveRequestDto.setImage(imageToUpdate);
 
-            UpdateResultDto updateResult = foodService.updateFood(trucks.get(0).getId(), foodUpdateRequestDto);
+            UpdateResultDto updateResult = foodService.saveFood(trucks.get(0).getId(), foodSaveRequestDto);
             assertThat(updateResult.getResult(), is("UPDATED"));
             
             try {
@@ -195,7 +195,7 @@ public class FoodServiceImplTest {
         } catch(InterruptedException e) {
             e.printStackTrace();
         }
-    }*/
+    }
 
     @Test
     void testDeleteFood() {

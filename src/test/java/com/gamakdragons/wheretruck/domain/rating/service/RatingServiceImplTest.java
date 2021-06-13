@@ -141,7 +141,7 @@ public class RatingServiceImplTest {
         String commentToUpdate = "정말 재밌어요ㅋㅋ";
         ratings.get(0).setStar(starToUpdate);
         ratings.get(0).setComment(commentToUpdate);
-        UpdateResultDto updateResult = ratingService.updateRating(trucks.get(0).getId(), ratings.get(0));
+        UpdateResultDto updateResult = ratingService.saveRating(trucks.get(0).getId(), ratings.get(0));
 
         assertThat(updateResult.getResult(), is("UPDATED"));
 
