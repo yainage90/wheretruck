@@ -51,18 +51,33 @@ public class RatingServiceImpl implements RatingService {
     @Override
     public UpdateResultDto saveRating(String truckId, Rating rating) {
 
-        rating.setId(UUID.randomUUID().toString());
+
         String current = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        rating.setCreatedDate(current);
         rating.setUpdatedDate(current);
+
+        String script;
+
+        if(rating.getId() == null) {
+            rating.setId(UUID.randomUUID().toString());
+            rating.setCreatedDate(current);
+
+            script = "if(ctx._source.ratings == null) {ctx._source.ratings = new ArrayList();}" + 
+                        "ctx._source.ratings.add(params.rating);" + 
+                        "ctx._source.numRating=ctx._source.ratings.stream().count();" + 
+                        "ctx._source.starAvg=ctx._source.ratings.stream().mapToDouble(r -> r.star).average().getAsDouble();";
+        } else {
+            script = "def target = ctx._source.ratings.find(rating -> rating.id == params.rating.id);" +
+                        "target.userId= params.rating.userId;" + 
+                        "target.star = params.rating.star;" +
+                        "target.comment = params.rating.comment;" +
+                        "target.updatedDate = params.rating.updatedDate;" +
+                        "ctx._source.numRating=ctx._source.ratings.stream().count();" + 
+                        "ctx._source.starAvg=ctx._source.ratings.stream().mapToDouble(r -> r.star).average().getAsDouble();";
+        }
 
         Map<String, Object> params = new HashMap<>();
         params.put("rating", rating.toMap());
 
-        String script = "if(ctx._source.ratings == null) {ctx._source.ratings = new ArrayList();}" + 
-                        "ctx._source.ratings.add(params.rating);" + 
-                        "ctx._source.numRating=ctx._source.ratings.stream().count();" + 
-                        "ctx._source.starAvg=ctx._source.ratings.stream().mapToDouble(r -> r.star).average().getAsDouble();";
         Script inline = new Script(ScriptType.INLINE, "painless", script, params);
 
         UpdateRequest request = EsRequestFactory.createUpdateWithScriptRequest(TRUCK_INDEX, truckId, inline);
@@ -84,7 +99,7 @@ public class RatingServiceImpl implements RatingService {
                 .build();
     }
 
-    @Override
+    /*@Override
     public UpdateResultDto updateRating(String truckId, Rating rating) {
 
         rating.setUpdatedDate(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
@@ -119,7 +134,7 @@ public class RatingServiceImpl implements RatingService {
                 .id(rating.getId())
                 .build();
 
-    }
+    }*/
 
     @Override
     public UpdateResultDto deleteRating(String truckId, String id) {

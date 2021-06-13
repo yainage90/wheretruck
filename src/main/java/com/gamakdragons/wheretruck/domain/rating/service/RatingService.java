@@ -8,7 +8,7 @@ import com.gamakdragons.wheretruck.domain.rating.entity.Rating;
 public interface RatingService {
     
     UpdateResultDto saveRating(String truckId, Rating rating);
-    UpdateResultDto updateRating(String truckId, Rating rating);
+    //UpdateResultDto updateRating(String truckId, Rating rating);
     UpdateResultDto deleteRating(String truckId, String id);
 
     SearchResultDto<MyRatingDto> findByUserId(String userId);
