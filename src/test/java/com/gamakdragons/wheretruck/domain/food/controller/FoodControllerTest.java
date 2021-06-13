@@ -105,12 +105,27 @@ public class FoodControllerTest {
 
 		given(foodService.sortFoods(truckId, ids)).willReturn(result);
 
-		MockHttpServletRequestBuilder request = MockMvcRequestBuilders.put("/api/food/sort/" + truckId + "/" + String.join(",", ids));
+		MockHttpServletRequestBuilder request = MockMvcRequestBuilders.put("/api/food/" + truckId + "/sort/" + String.join(",", ids));
 
 		mockMvc.perform(request)
 				.andExpect(status().isOk())
 				.andExpect(content().contentType("application/json"))
 				.andExpect(content().string(objectMapper.writeValueAsString(result)));
+	}
+
+	@Test
+	void testDelete2() {
+		
+	}
+
+	@Test
+	void testSave2() {
+		
+	}
+
+	@Test
+	void testSort2() {
+		
 	}
 
 	/*@Test
