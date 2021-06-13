@@ -1,7 +1,5 @@
 package com.gamakdragons.wheretruck.auth.service.apple;
 
-import java.util.Collections;
-
 import com.gamakdragons.wheretruck.auth.dto.LoginRequestDto;
 import com.gamakdragons.wheretruck.auth.dto.LoginResponseDto;
 import com.gamakdragons.wheretruck.auth.dto.LogoutRequestDto;
@@ -9,7 +7,7 @@ import com.gamakdragons.wheretruck.auth.dto.LogoutResponseDto;
 import com.gamakdragons.wheretruck.auth.dto.apple.ApplePublicKeyResponse;
 import com.gamakdragons.wheretruck.auth.service.JwtUtil;
 import com.gamakdragons.wheretruck.auth.service.OAuth2Service;
-import com.gamakdragons.wheretruck.common.IndexResultDto;
+import com.gamakdragons.wheretruck.common.IndexUpdateResultDto;
 import com.gamakdragons.wheretruck.domain.user.entity.User;
 import com.gamakdragons.wheretruck.domain.user.service.UserService;
 
@@ -63,10 +61,9 @@ public class AppleAuthService implements OAuth2Service {
                         .id(userId)
                         .nickName(loginRequestDto.getNickName())
                         .role(loginRequestDto.getRole())
-                        .favorites(Collections.emptyList())
                         .build();
 
-            IndexResultDto result = userService.saveUser(user); 
+            IndexUpdateResultDto result = userService.saveUser(user); 
             log.info("user save result: " + result);
         }
 
