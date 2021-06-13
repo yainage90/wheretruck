@@ -6,4 +6,5 @@ public interface S3Service {
 
     String uploadImage(String bucketName, String fileName, MultipartFile imageFile);
     boolean deleteImage(String bucketName, String fileName);
+    void deleteImagesWithPrefix(String bucketName, String prefix);
 }
