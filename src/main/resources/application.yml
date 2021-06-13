@@ -16,6 +16,8 @@ elasticsearch:
       name: truck
     user:
       name: user
+    favorite:
+      name: favorite
 
 cloud:
   aws:
@@ -28,6 +30,7 @@ cloud:
       instance-profile: false
     s3:
       bucket: 
+        truck_image: wheretruck-truck-image
         food_image: wheretruck-food-image
 
 jwt:
