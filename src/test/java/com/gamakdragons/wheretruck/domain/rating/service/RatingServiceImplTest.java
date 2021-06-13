@@ -9,49 +9,37 @@ import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import com.gamakdragons.wheretruck.TestIndexUtil;
 import com.gamakdragons.wheretruck.cloud.elasticsearch.service.ElasticSearchServiceImpl;
-import com.gamakdragons.wheretruck.common.GeoLocation;
-import com.gamakdragons.wheretruck.common.IndexResultDto;
+import com.gamakdragons.wheretruck.common.IndexUpdateResultDto;
 import com.gamakdragons.wheretruck.common.UpdateResultDto;
 import com.gamakdragons.wheretruck.config.ElasticSearchConfig;
 import com.gamakdragons.wheretruck.domain.rating.dto.MyRatingDto;
 import com.gamakdragons.wheretruck.domain.rating.entity.Rating;
+import com.gamakdragons.wheretruck.domain.truck.dto.TruckSaveRequestDto;
 import com.gamakdragons.wheretruck.domain.truck.entity.Truck;
 import com.gamakdragons.wheretruck.domain.truck.service.TruckService;
 import com.gamakdragons.wheretruck.domain.truck.service.TruckServiceImpl;
 
-import org.apache.http.HttpHost;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.CredentialsProvider;
-import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestClientBuilder;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.client.indices.CreateIndexRequest;
-import org.elasticsearch.client.indices.CreateIndexResponse;
-import org.elasticsearch.client.indices.GetIndexRequest;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.common.xcontent.XContentFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 
 import lombok.extern.slf4j.Slf4j;
 
-@SpringBootTest(classes = {RatingServiceImpl.class, TruckServiceImpl.class, ElasticSearchServiceImpl.class, ElasticSearchConfig.class}, 
+@SpringBootTest(classes = {RatingServiceImpl.class, TruckServiceImpl.class, ElasticSearchServiceImpl.class, ElasticSearchConfig.class, TestIndexUtil.class}, 
                 properties = {"spring.config.location=classpath:application-test.yml"})
 @Slf4j
 public class RatingServiceImplTest {
@@ -77,31 +65,27 @@ public class RatingServiceImplTest {
     @Value("${elasticsearch.password}")
     private String ES_PASSWORD;
 
-    private RestHighLevelClient esClient;
-
     @BeforeEach
     public void beforeEach() throws IOException, InterruptedException {
-        initRestHighLevelClient();
-
-        deleteTestTruckIndex();
-        createTestTruckIndex();
+        TestIndexUtil.deleteTestTruckIndex();
+        TestIndexUtil.createTestTruckIndex();
     }
 
     @AfterEach
     public void afterEach() throws IOException {
-        deleteTestTruckIndex();
+        TestIndexUtil.deleteTestTruckIndex();
     }
 
     @Test
     void testSaveRatingUpdateTruckNumRatingAndStarAvg() {
 
-        List<Truck> trucks = createTestTruckData();
-        indexTestTruckData(trucks);
+        List<TruckSaveRequestDto> trucks = createTestTruckData();
+        List<String> truckIds = indexTestTruckData(trucks);
 
         List<Rating> ratings = createTestRatingData();
 
         ratings.forEach(rating -> {
-            UpdateResultDto indexResult = ratingService.saveRating(trucks.get(0).getId(), rating);
+            UpdateResultDto indexResult = ratingService.saveRating(truckIds.get(0), rating);
             assertThat(indexResult.getResult(), is("UPDATED"));
             assertThat(indexResult.getId(), is(rating.getId()));
         });
@@ -112,7 +96,7 @@ public class RatingServiceImplTest {
             e.printStackTrace();
         }
 
-        Truck truck = truckService.getById(trucks.get(0).getId());
+        Truck truck = truckService.getById(truckIds.get(0));
         List<Rating> truck1Ratings = truck.getRatings();
 
         assertThat(truck.getNumRating(), is(ratings.size()));
@@ -125,11 +109,11 @@ public class RatingServiceImplTest {
     @Test
     void testUpdateRatingUpdateTruckStarAvg() {
 
-        List<Truck> trucks = createTestTruckData();
-        indexTestTruckData(trucks);
+        List<TruckSaveRequestDto> trucks = createTestTruckData();
+        List<String> truckIds = indexTestTruckData(trucks);
 
         List<Rating> ratings = createTestRatingData();
-        indexTestRatingData(trucks.get(0).getId(), ratings);
+        indexTestRatingData(truckIds.get(0), ratings);
 
         try {
             Thread.sleep(1000);
@@ -141,7 +125,7 @@ public class RatingServiceImplTest {
         String commentToUpdate = "정말 재밌어요ㅋㅋ";
         ratings.get(0).setStar(starToUpdate);
         ratings.get(0).setComment(commentToUpdate);
-        UpdateResultDto updateResult = ratingService.saveRating(trucks.get(0).getId(), ratings.get(0));
+        UpdateResultDto updateResult = ratingService.saveRating(truckIds.get(0), ratings.get(0));
 
         assertThat(updateResult.getResult(), is("UPDATED"));
 
@@ -151,7 +135,7 @@ public class RatingServiceImplTest {
             e.printStackTrace();
         }
 
-        Truck truck = truckService.getById(trucks.get(0).getId());
+        Truck truck = truckService.getById(truckIds.get(0));
         double calculatedStarAvg = ratings.stream().mapToDouble(rating -> rating.getStar()).average().getAsDouble();
         assertThat((double) truck.getStarAvg(), closeTo(calculatedStarAvg, 0.0001f));
     }
@@ -159,11 +143,11 @@ public class RatingServiceImplTest {
     @Test
     void testDeleteRating() {
 
-        List<Truck> trucks = createTestTruckData();
-        indexTestTruckData(trucks);
+        List<TruckSaveRequestDto> trucks = createTestTruckData();
+        List<String> truckIds = indexTestTruckData(trucks);
 
         List<Rating> ratings = createTestRatingData();
-        indexTestRatingData(trucks.get(0).getId(), ratings);
+        indexTestRatingData(truckIds.get(0), ratings);
 
         try {
             Thread.sleep(1000);
@@ -171,7 +155,7 @@ public class RatingServiceImplTest {
             e.printStackTrace();
         }
 
-        UpdateResultDto deleteResult = ratingService.deleteRating(trucks.get(0).getId(), ratings.get(0).getId());
+        UpdateResultDto deleteResult = ratingService.deleteRating(truckIds.get(0), ratings.get(0).getId());
         assertThat(deleteResult.getResult(), is("UPDATED"));
 
         try {
@@ -180,7 +164,7 @@ public class RatingServiceImplTest {
             e.printStackTrace();
         }
 
-        Truck truck = truckService.getById(trucks.get(0).getId());
+        Truck truck = truckService.getById(truckIds.get(0));
         List<Rating> truck1Ratings = truck.getRatings();
 
         assertThat(truck.getNumRating(), is(ratings.size() - 1));
@@ -194,11 +178,11 @@ public class RatingServiceImplTest {
     @Test
     void testFindByUserIdResultIsInCreatedDateReverseOrder() {
 
-        List<Truck> trucks = createTestTruckData();
-        indexTestTruckData(trucks);
+        List<TruckSaveRequestDto> trucks = createTestTruckData();
+        List<String> truckIds = indexTestTruckData(trucks);
 
         List<Rating> ratings = createTestRatingData();
-        indexTestRatingData(trucks.get(0).getId(), ratings);
+        indexTestRatingData(truckIds.get(0), ratings);
 
         try {
             Thread.sleep(1000);
@@ -214,227 +198,40 @@ public class RatingServiceImplTest {
         );
     }
 
-    private void initRestHighLevelClient() {
+    private List<TruckSaveRequestDto> createTestTruckData() {
 
-        CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-        credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(ES_USER, ES_PASSWORD));
+        byte[] imageBinary1 = new byte[128];
+        new Random().nextBytes(imageBinary1);
+        MockMultipartFile image1 = new MockMultipartFile("image1", null, MediaType.MULTIPART_FORM_DATA_VALUE, imageBinary1);
 
-        RestClientBuilder builder = RestClient.builder(
-            new HttpHost(ES_HOST, ES_PORT, "http")
-        )
-        .setHttpClientConfigCallback((httpClientBuilder) -> {
-            return httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
-        });
+        TruckSaveRequestDto dto1 = new TruckSaveRequestDto();
+        dto1.setName("truck1");
+        dto1.setDescription("this is truck1");
+        dto1.setUserId("user1");
+        dto1.setImage(image1);
 
-        this.esClient = new RestHighLevelClient(builder);
+        byte[] imageBinary2 = new byte[128];
+        new Random().nextBytes(imageBinary2);
+        MockMultipartFile image2 = new MockMultipartFile("image2", null, MediaType.MULTIPART_FORM_DATA_VALUE, imageBinary2);
+
+        TruckSaveRequestDto dto2 = new TruckSaveRequestDto();
+        dto2.setName("truck2");
+        dto2.setDescription("this is truck2");
+        dto2.setUserId("user2");
+        dto2.setImage(image2);
+
+        return Arrays.asList(dto1, dto2);
     }
 
-    private void createTestTruckIndex() throws IOException {
+    private List<String> indexTestTruckData(List<TruckSaveRequestDto> dtos) {
 
-        CreateIndexRequest request = new CreateIndexRequest(TEST_TRUCK_INDEX);
-
-        request.settings(Settings.builder()
-            .put("index.number_of_shards", 3)
-            .put("index.number_of_replicas", 1)
-        );
-
-        XContentBuilder builder = XContentFactory.jsonBuilder();
-        builder.startObject();
-        {
-            builder.startObject("properties");
-            {
-                builder.startObject("id");
-                {
-                    builder.field("type", "keyword");
-                }
-                builder.endObject();
-
-                builder.startObject("name");
-                {
-                    builder.field("type", "keyword");
-                }
-                builder.endObject();
-
-                builder.startObject("geoLocation");
-                {
-                    builder.field("type", "geo_point");
-                }
-                builder.endObject();
-
-                builder.startObject("description");
-                {
-                    builder.field("type", "keyword");
-                }
-                builder.endObject();
-
-                builder.startObject("opened");
-                {
-                    builder.field("type", "boolean");
-                }
-                builder.endObject();
-
-                builder.startObject("userId");
-                {
-                    builder.field("type", "keyword");
-                }
-                builder.endObject();
-                
-                builder.startObject("numRating");
-                {
-                    builder.field("type", "integer");
-                }
-                builder.endObject();
-
-                builder.startObject("starAvg");
-                {
-                    builder.field("type", "float");
-                }
-                builder.endObject();
-
-                builder.startObject("foods");
-                {
-                    builder.field("type", "nested");
-                    builder.startObject("properties");
-                    {
-                        builder.startObject("id");
-                        {
-                            builder.field("type", "keyword");
-                        }
-                        builder.endObject();
-                        builder.startObject("name");
-                        {
-                            builder.field("type", "keyword");
-                        }
-                        builder.endObject();
-                        builder.startObject("cost");
-                        {
-                            builder.field("type", "integer");
-                        }
-                        builder.endObject();
-                        builder.startObject("description");
-                        {
-                            builder.field("type", "keyword");
-                        }
-                        builder.endObject();
-                        builder.startObject("imageUrl");
-                        {
-                            builder.field("type", "keyword");
-                        }
-                        builder.endObject();
-                    }
-                    builder.endObject();
-                }
-                builder.endObject();
-                
-                builder.startObject("ratings");
-                {
-                    builder.field("type", "nested");
-                    builder.startObject("properties");
-                        builder.startObject("id");
-                        {
-                            builder.field("type", "keyword");
-                        }
-                        builder.endObject();
-                        builder.startObject("userId");
-                        {
-                            builder.field("type", "keyword");
-                        }
-                        builder.endObject();
-                        builder.startObject("star");
-                        {
-                            builder.field("type", "double");
-                        }
-                        builder.endObject();
-                        builder.startObject("comment");
-                        {
-                            builder.field("type", "keyword");
-                        }
-                        builder.endObject();
-                        builder.startObject("createdDate");
-                        {
-                            builder.field("type", "date");
-                            builder.field("format", "yyyy-MM-dd HH:mm:ss");
-                        }
-                        builder.endObject();
-                        builder.startObject("updatedDate");
-                        {
-                            builder.field("type", "date");
-                            builder.field("format", "yyyy-MM-dd HH:mm:ss");
-                        }
-                        builder.endObject();
-                    builder.endObject();
-                }
-                builder.endObject();
-            }
-            builder.endObject();
-        }
-        builder.endObject();
-
-        request.mapping(builder);
-
-        CreateIndexResponse response = esClient.indices().create(request, RequestOptions.DEFAULT);
-        log.info("index created: " + response.index());
-        if(!response.isAcknowledged()) {
-            throw new IOException();
-        }
-
-        try {
-            Thread.sleep(500);
-        } catch(InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void deleteTestTruckIndex() throws IOException {
-        GetIndexRequest getIndexRequest = new GetIndexRequest(TEST_TRUCK_INDEX);
-        if(esClient.indices().exists(getIndexRequest, RequestOptions.DEFAULT)) {
-            DeleteIndexRequest request = new DeleteIndexRequest(TEST_TRUCK_INDEX);
-            AcknowledgedResponse response = esClient.indices().delete(request, RequestOptions.DEFAULT);
-            log.info("index deleted: " + response.isAcknowledged());
-            if(!response.isAcknowledged()) {
-                throw new IOException();
-            }
-        }
-
-    }
-
-    private List<Truck> createTestTruckData() {
-
-        Truck truck1 = new Truck(
-            UUID.randomUUID().toString(), //id
-            "truck1", //name
-            new GeoLocation(30.0f, 130.0f), //geoLocation
-            "this is truck1", //description
-            false, //opened
-            UUID.randomUUID().toString(), //userId
-            0, //numRating
-            0.0f, //starAvg
-            null, //foods
-            null //ratings
-        );
-
-        Truck truck2 = new Truck(
-            UUID.randomUUID().toString(), //id
-            "truck2", //name
-            new GeoLocation(38.0f, 141.0f), //geoLocation
-            "this is truck1", //description
-            false, //opened
-            UUID.randomUUID().toString(), //userId
-            0, //numRating
-            0.0f, //starAvg
-            null, //foods
-            null //ratings
-        );
-
-        return Arrays.asList(truck1, truck2);
-    }
-
-    private void indexTestTruckData(List<Truck> trucks) {
-
-        trucks.forEach(truck -> {
-            IndexResultDto indexResult = truckService.saveTruck(truck);
+        List<String> truckIds = new ArrayList<>();
+        dtos.forEach(dto -> {
+            IndexUpdateResultDto indexResult = truckService.saveTruck(dto);
             log.info("truck index result: " + indexResult.getResult() + ", truck id: " + indexResult.getId());
-            assertThat(indexResult.getId(), is(truck.getId()));
+            assertThat(indexResult.getResult(), is("CREATED"));
+
+            truckIds.add(indexResult.getId());
         });
 
         try {
@@ -442,29 +239,28 @@ public class RatingServiceImplTest {
         } catch(InterruptedException e) {
             e.printStackTrace();
         }
+
+        return truckIds;
     }
 
     private List<Rating> createTestRatingData() {
 
         String userId = UUID.randomUUID().toString();
 
-        Rating rating1 = Rating.builder()
-                                .userId(userId)
-                                .comment("hello1")
-                                .star(3.0f)
-                                .build();
+        Rating rating1 = new Rating();
+        rating1.setUserId(userId);
+        rating1.setComment("hello1");
+        rating1.setStar(3.0f);
 
-        Rating rating2 = Rating.builder()
-                                .userId(userId)
-                                .comment("hello2")
-                                .star(5.0f)
-                                .build();
+        Rating rating2 = new Rating();
+        rating2.setUserId(userId);
+        rating2.setComment("hello2");
+        rating2.setStar(5.0f);
 
-        Rating rating3 = Rating.builder()
-                                .userId(userId)
-                                .comment("hello3")
-                                .star(1.0f)
-                                .build();
+        Rating rating3 = new Rating();
+        rating3.setUserId(userId);
+        rating3.setComment("hello3");
+        rating3.setStar(1.0f);
 
         return Arrays.asList(rating1, rating2, rating3);
     }
