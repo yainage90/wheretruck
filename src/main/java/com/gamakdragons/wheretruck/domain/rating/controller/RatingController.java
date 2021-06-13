@@ -31,31 +31,27 @@ public class RatingController {
 
 
     @RequestMapping(value = "/{truckId}", method = {RequestMethod.POST, RequestMethod.PUT})
-    public ResponseEntity<UpdateResultDto> save(@PathVariable String truckId, @RequestBody Rating rating) {
-        log.info("/rating/" + truckId + ". rating=" + rating);
+    public ResponseEntity<UpdateResultDto> save(@PathVariable String truckId, @RequestBody Rating rating, HttpServletRequest httpServletRequest) {
+        log.info("/api/rating/" + truckId + ". rating=" + rating);
+
+        rating.setUserId(httpServletRequest.getAttribute("userId").toString());
 
         return new ResponseEntity<>(service.saveRating(truckId, rating), HttpStatus.OK);
     }
 
-    /*@PutMapping("/{truckId}")
-    public ResponseEntity<UpdateResultDto> update(@PathVariable String truckId, @RequestBody Rating rating) {
-        log.info("/rating/" + truckId + ". rating=" + rating);
-
-        return new ResponseEntity<>(service.updateRating(truckId, rating), HttpStatus.OK);
-    }*/
-
     @DeleteMapping("/{truckId}/{id}")
     public ResponseEntity<UpdateResultDto> delete(@PathVariable String truckId, @PathVariable String id) {
-        log.info("/rating/" + truckId + "/" + id);
+        log.info("/api/rating/" + truckId + "/" + id);
 
         return new ResponseEntity<>(service.deleteRating(truckId, id), HttpStatus.OK);
     }
 
     @GetMapping("/my")
     public ResponseEntity<SearchResultDto<MyRatingDto>> findByUserId(HttpServletRequest request) {
+
         String userId = request.getAttribute("userId").toString();
 
-        log.info("/rating/user/" + userId);
+        log.info("/api/rating/user/" + userId);
 
         return new ResponseEntity<>(service.findByUserId(userId), HttpStatus.OK);
     }

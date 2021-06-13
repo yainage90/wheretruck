@@ -67,7 +67,6 @@ public class RatingServiceImpl implements RatingService {
                         "ctx._source.starAvg=ctx._source.ratings.stream().mapToDouble(r -> r.star).average().getAsDouble();";
         } else {
             script = "def target = ctx._source.ratings.find(rating -> rating.id == params.rating.id);" +
-                        "target.userId= params.rating.userId;" + 
                         "target.star = params.rating.star;" +
                         "target.comment = params.rating.comment;" +
                         "target.updatedDate = params.rating.updatedDate;" +
@@ -98,43 +97,6 @@ public class RatingServiceImpl implements RatingService {
                 .id(rating.getId())
                 .build();
     }
-
-    /*@Override
-    public UpdateResultDto updateRating(String truckId, Rating rating) {
-
-        rating.setUpdatedDate(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-        Map<String, Object> params = new HashMap<>();
-        params.put("rating", rating.toMap());
-
-        String script = "def target = ctx._source.ratings.find(rating -> rating.id == params.rating.id);" +
-                        "target.userId= params.rating.userId;" + 
-                        "target.star = params.rating.star;" +
-                        "target.comment = params.rating.comment;" +
-                        "target.updatedDate = params.rating.updatedDate;" +
-                        "ctx._source.numRating=ctx._source.ratings.stream().count();" + 
-                        "ctx._source.starAvg=ctx._source.ratings.stream().mapToDouble(r -> r.star).average().getAsDouble();";
-
-
-        Script inline = new Script(ScriptType.INLINE, "painless", script, params);
-
-        UpdateRequest request = EsRequestFactory.createUpdateWithScriptRequest(TRUCK_INDEX, truckId, inline);
-
-        UpdateResponse response;
-        try {
-            response = restClient.update(request, RequestOptions.DEFAULT);
-        } catch(IOException e) {
-            log.error("IOException occured.");
-            return UpdateResultDto.builder()
-                .result(e.getLocalizedMessage())
-                .build();
-        }
-
-        return UpdateResultDto.builder()
-                .result(response.getResult().name())
-                .id(rating.getId())
-                .build();
-
-    }*/
 
     @Override
     public UpdateResultDto deleteRating(String truckId, String id) {
