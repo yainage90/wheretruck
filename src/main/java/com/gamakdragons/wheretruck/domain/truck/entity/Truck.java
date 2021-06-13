@@ -29,6 +29,7 @@ public class Truck {
     private String userId;
     private int numRating;
     private float starAvg;
+    private String imageUrl;
     private List<Food> foods;
     private List<Rating> ratings;
 
