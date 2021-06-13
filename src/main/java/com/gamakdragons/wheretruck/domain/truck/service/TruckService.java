@@ -4,24 +4,24 @@ import java.util.List;
 
 import com.gamakdragons.wheretruck.common.DeleteResultDto;
 import com.gamakdragons.wheretruck.common.GeoLocation;
-import com.gamakdragons.wheretruck.common.IndexResultDto;
+import com.gamakdragons.wheretruck.common.IndexUpdateResultDto;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
-import com.gamakdragons.wheretruck.common.UpdateResultDto;
+import com.gamakdragons.wheretruck.domain.truck.dto.TruckSaveRequestDto;
 import com.gamakdragons.wheretruck.domain.truck.entity.Truck;
 
 public interface TruckService {
     
     SearchResultDto<Truck> findAll();
     SearchResultDto<Truck> findByUserId(String userId);
-    SearchResultDto<Truck> findByGeoLocation(GeoLocation location, float distance);
+    SearchResultDto<Truck> findByGeoLocation(GeoLocation geoLocation, float distance);
 
     Truck getById(String id);
     SearchResultDto<Truck> getByIds(List<String> ids);
 
-    IndexResultDto saveTruck(Truck truck);
-    UpdateResultDto updateTruck(Truck truck);
+    IndexUpdateResultDto saveTruck(TruckSaveRequestDto truckSaveRequestDto);
+    IndexUpdateResultDto updateTruck(TruckSaveRequestDto truckSaveRequestDto);
     DeleteResultDto deleteTruck(String id);
 
-    UpdateResultDto openTruck(String id, GeoLocation location);
-    UpdateResultDto stopTruck(String id);
+    IndexUpdateResultDto openTruck(String id, GeoLocation location);
+    IndexUpdateResultDto stopTruck(String id);
 }

@@ -6,15 +6,16 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
+import com.gamakdragons.wheretruck.cloud.aws.exception.S3ServiceException;
+import com.gamakdragons.wheretruck.cloud.aws.service.S3Service;
 import com.gamakdragons.wheretruck.cloud.elasticsearch.service.ElasticSearchServiceImpl;
 import com.gamakdragons.wheretruck.common.DeleteResultDto;
 import com.gamakdragons.wheretruck.common.GeoLocation;
-import com.gamakdragons.wheretruck.common.IndexResultDto;
+import com.gamakdragons.wheretruck.common.IndexUpdateResultDto;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
-import com.gamakdragons.wheretruck.common.UpdateResultDto;
+import com.gamakdragons.wheretruck.domain.truck.dto.TruckSaveRequestDto;
 import com.gamakdragons.wheretruck.domain.truck.entity.Truck;
 import com.gamakdragons.wheretruck.util.EsRequestFactory;
 import com.google.gson.Gson;
@@ -32,6 +33,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.index.reindex.DeleteByQueryRequest;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
@@ -46,20 +48,31 @@ import lombok.extern.slf4j.Slf4j;
 public class TruckServiceImpl implements TruckService {
 
     @Value("${elasticsearch.index.truck.name}")
-    private String TRUCK_INDEX_NAME;
+    private String TRUCK_INDEX;
+
+    @Value("${elasticsearch.index.favorite.name}")
+    private String FAVORITE_INDEX;
+
+    @Value("${cloud.aws.s3.bucket.truck_image}")
+    private String TRUCK_IMAGE_BUCKET;
+
+    @Value("${cloud.aws.s3.bucket.food_image}")
+    private String FOOD_IMAGE_BUCKET;
 
     private final ElasticSearchServiceImpl restClient;
+    private final S3Service s3Service;
 
 
     @Autowired
-    public TruckServiceImpl(ElasticSearchServiceImpl restClient) {
+    public TruckServiceImpl(ElasticSearchServiceImpl restClient, S3Service s3Service) {
         this.restClient = restClient;
+        this.s3Service = s3Service;
     }
 
     @Override
     public Truck getById(String id) {
 
-        GetRequest request = EsRequestFactory.createGetRequest(TRUCK_INDEX_NAME, id);
+        GetRequest request = EsRequestFactory.createGetRequest(TRUCK_INDEX, id);
         GetResponse response;
         try {
             response = restClient.get(request, RequestOptions.DEFAULT);
@@ -81,7 +94,7 @@ public class TruckServiceImpl implements TruckService {
     @Override
     public SearchResultDto<Truck> getByIds(List<String> ids) {
 
-        MultiGetRequest request = EsRequestFactory.createMultiGetRequest(TRUCK_INDEX_NAME, ids);
+        MultiGetRequest request = EsRequestFactory.createMultiGetRequest(TRUCK_INDEX, ids);
         MultiGetResponse response;
         try {
             response = restClient.multiGet(request, RequestOptions.DEFAULT);
@@ -102,6 +115,7 @@ public class TruckServiceImpl implements TruckService {
                                                 null,
                                                 item.getResponse().getField("numRating").getValue(),
                                                 item.getResponse().getField("starAvg").getValue(),
+                                                item.getResponse().getField("getImageUrl").getValue(),
                                                 null,
                                                 null
                                             )
@@ -121,7 +135,7 @@ public class TruckServiceImpl implements TruckService {
 
         String[] fieldsToInclude = new String[]{};
         String[] fieldsToExclude = new String[]{"foods", "ratings"};
-        SearchRequest request = EsRequestFactory.createSearchAllRequest(TRUCK_INDEX_NAME, fieldsToInclude, fieldsToExclude); 
+        SearchRequest request = EsRequestFactory.createSearchAllRequest(TRUCK_INDEX, fieldsToInclude, fieldsToExclude); 
 
         SearchResponse response;
         try {
@@ -137,7 +151,7 @@ public class TruckServiceImpl implements TruckService {
 
     @Override
     public SearchResultDto<Truck> findByUserId(String userId) {
-        SearchRequest request = EsRequestFactory.createSearchByFieldRequest(TRUCK_INDEX_NAME, "userId", userId);
+        SearchRequest request = EsRequestFactory.createSearchByFieldRequest(TRUCK_INDEX, "userId", userId);
 
         SearchResponse response;
         try {
@@ -157,7 +171,7 @@ public class TruckServiceImpl implements TruckService {
 
         String[] fieldsToInclude = new String[]{};
         String[] fieldsToExclude = new String[]{"foods", "ratings"};
-        SearchRequest request = EsRequestFactory.createGeoSearchRequest(TRUCK_INDEX_NAME, geoLocation, distance, fieldsToInclude, fieldsToExclude);
+        SearchRequest request = EsRequestFactory.createGeoSearchRequest(TRUCK_INDEX, geoLocation, distance, fieldsToInclude, fieldsToExclude);
         
         SearchResponse response;
         try {
@@ -198,47 +212,82 @@ public class TruckServiceImpl implements TruckService {
     
 
     @Override
-    public IndexResultDto saveTruck(Truck truck) {
+    public IndexUpdateResultDto saveTruck(TruckSaveRequestDto truckSaveRequestDto) {
 
-        truck.setId(UUID.randomUUID().toString());
-        truck.setFoods(Collections.emptyList());
-        truck.setRatings(Collections.emptyList());
+        Truck truck = truckSaveRequestDto.toSaveEntity();
+        truck.setGeoLocation(new GeoLocation(0.0f, 0.0f));
+
+        if(truckSaveRequestDto.getImage() != null) {
+            try {
+                String truckImageUrl = s3Service.uploadImage(TRUCK_IMAGE_BUCKET, truck.getId(), truckSaveRequestDto.getImage());
+                log.info("image uploaded to s3 bucket. url=" + truckImageUrl);
+                truck.setImageUrl(truckImageUrl);
+            } catch(S3ServiceException e) {
+                log.error(e.getMessage());
+            }
+            
+        }
 
         log.info(truck.toString());
 
-        IndexRequest request = EsRequestFactory.createIndexRequest(TRUCK_INDEX_NAME, truck.getId(), truck);
+        IndexRequest request = EsRequestFactory.createIndexRequest(TRUCK_INDEX, truck.getId(), truck);
         IndexResponse response;
         try {
             response = restClient.index(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error("IOException occured.");
-            return IndexResultDto.builder()
+            return IndexUpdateResultDto.builder()
                 .result(e.getLocalizedMessage())
                 .build();
 
         }
 
-        return IndexResultDto.builder()
+        return IndexUpdateResultDto.builder()
                 .result(response.getResult().name())
                 .id(response.getId())
                 .build();
     }
 
     @Override
-    public UpdateResultDto updateTruck(Truck truck) {
+    public IndexUpdateResultDto updateTruck(TruckSaveRequestDto truckSaveRequestDto) {
 
-        UpdateRequest request = EsRequestFactory.createUpdateRequest(TRUCK_INDEX_NAME, truck.getId(), truck);
+        Truck truck = truckSaveRequestDto.toUpdateEntity();
+
+        if(truckSaveRequestDto.getImage() != null) {
+            String truckImageUrl = s3Service.uploadImage(TRUCK_IMAGE_BUCKET, truck.getId(), truckSaveRequestDto.getImage());
+            log.info("image uploaded to s3 bucket. url=" + truckImageUrl);
+            truck.setImageUrl(truckImageUrl);
+        } else {
+            if(s3Service.deleteImage(TRUCK_IMAGE_BUCKET, truck.getId())) {
+                log.info("truck image removed.");
+            }
+        }
+
+        log.info(truck.toString());
+
+        String script = "ctx._source.name = params.name;" +
+                        "ctx._source.description = params.description;" +
+                        "ctx._source.imageUrl = params.imageUrl;";
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("name", truck.getName());
+        params.put("description", truck.getDescription());
+        params.put("imageUrl", truck.getImageUrl());
+
+        Script inline = new Script(ScriptType.INLINE, "painless", script, params);
+
+        UpdateRequest request = EsRequestFactory.createUpdateWithScriptRequest(TRUCK_INDEX, truck.getId(), inline);
         UpdateResponse response;
         try {
             response = restClient.update(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error("IOException occured.");
-            return UpdateResultDto.builder()
+            return IndexUpdateResultDto.builder()
                 .result(e.getLocalizedMessage())
                 .build();
         }
 
-        return UpdateResultDto.builder()
+        return IndexUpdateResultDto.builder()
                 .result(response.getResult().name())
                 .id(truck.getId())
                 .build();
@@ -246,8 +295,9 @@ public class TruckServiceImpl implements TruckService {
 
     @Override
     public DeleteResultDto deleteTruck(String id) {
-        DeleteRequest request = EsRequestFactory.createDeleteByIdRequest(TRUCK_INDEX_NAME, id);
+        DeleteRequest request = EsRequestFactory.createDeleteByIdRequest(TRUCK_INDEX, id);
         DeleteResponse response;
+
         try {
             response = restClient.delete(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
@@ -257,62 +307,82 @@ public class TruckServiceImpl implements TruckService {
                     .build();
         }
 
+        deleteFavorites(id);
+
+        try {
+            s3Service.deleteImage(TRUCK_IMAGE_BUCKET, id);
+            s3Service.deleteImagesWithPrefix(FOOD_IMAGE_BUCKET, id);
+        } catch(S3ServiceException e) {
+            log.error(e.getMessage());
+        }
+
         return DeleteResultDto.builder()
                 .result(response.getResult().name())
                 .build();
     }
 
- 
+    private void deleteFavorites(String truckId) {
+
+        DeleteByQueryRequest request = EsRequestFactory.createDeleteByQuerydRequest(new String[]{FAVORITE_INDEX}, "truckId", truckId);
+
+        try {
+            restClient.deleteByQuery(request, RequestOptions.DEFAULT);
+        } catch(IOException e) {
+            log.error("IOException occured.");
+        }
+    }
+
     @Override
-    public UpdateResultDto openTruck(String id, GeoLocation geoLocation) {
+    public IndexUpdateResultDto openTruck(String id, GeoLocation geoLocation) {
 
         Map<String, Object> params = new HashMap<>();
         params.put("opened", true);
         params.put("lat", geoLocation.getLat());
         params.put("lon", geoLocation.getLon());
-        String script1 = "ctx._source.opened=params.opened;";
-        String script2 = "ctx._source.geoLocation.lat=params.lat;";
-        String script3 = "ctx._source.geoLocation.lon=params.lon;";
-        Script inline = new Script(ScriptType.INLINE, "painless", script1 + script2 + script3, params);
+        String script = "ctx._source.opened=params.opened;" +
+                        "ctx._source.geoLocation.lat=params.lat;" +
+                        "ctx._source.geoLocation.lon=params.lon;";
 
-        UpdateRequest request = EsRequestFactory.createUpdateWithScriptRequest(TRUCK_INDEX_NAME, id, inline);
+        Script inline = new Script(ScriptType.INLINE, "painless", script, params);
+
+        UpdateRequest request = EsRequestFactory.createUpdateWithScriptRequest(TRUCK_INDEX, id, inline);
 
         UpdateResponse response;
         try {
             response = restClient.update(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error("IOException occured.");
-            return UpdateResultDto.builder()
+            return IndexUpdateResultDto.builder()
                     .result(e.getLocalizedMessage())
                     .build();
         }
 
-        return UpdateResultDto.builder()
+        return IndexUpdateResultDto.builder()
                 .result(response.getResult().name())
                 .build();
     }
 
     @Override
-    public UpdateResultDto stopTruck(String id) {
+    public IndexUpdateResultDto stopTruck(String id) {
 
         Map<String, Object> params = new HashMap<>();
         params.put("opened", false);
         String script = "ctx._source.opened=params.opened;";
         Script inline = new Script(ScriptType.INLINE, "painless", script, params);
 
-        UpdateRequest request = EsRequestFactory.createUpdateWithScriptRequest(TRUCK_INDEX_NAME, id, inline);
+        UpdateRequest request = EsRequestFactory.createUpdateWithScriptRequest(TRUCK_INDEX, id, inline);
         
         UpdateResponse response;
         try {
             response = restClient.update(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error("IOException occured.");
-            return UpdateResultDto.builder()
+            return IndexUpdateResultDto.builder()
                     .result(e.getLocalizedMessage())
                     .build();
         }
 
-        return UpdateResultDto.builder()
+        return IndexUpdateResultDto.builder()
                 .result(response.getResult().name())
                 .build();
     }
