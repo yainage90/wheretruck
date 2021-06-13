@@ -6,8 +6,9 @@ import com.gamakdragons.wheretruck.auth.filter.JwtAuthenticationFilter;
 
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-//@Configuration
+@Configuration
 public class WebConfig {
 
 	@Bean
