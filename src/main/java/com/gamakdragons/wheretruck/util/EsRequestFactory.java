@@ -226,7 +226,7 @@ public class EsRequestFactory {
     }
 
 
-    public static DeleteByQueryRequest createDeleteByFieldRequest(String[] indices, String field, String value) {
+    public static DeleteByQueryRequest createDeleteByQuerydRequest(String[] indices, String field, String value) {
         
         DeleteByQueryRequest request = new DeleteByQueryRequest(indices);
 
