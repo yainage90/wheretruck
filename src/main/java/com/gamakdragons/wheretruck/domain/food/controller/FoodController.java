@@ -33,13 +33,6 @@ public class FoodController {
         return new ResponseEntity<>(service.saveFood(truckId, foodSaveRequestDto), HttpStatus.OK);
     }
 
-    /*@PutMapping("/{truckId}")
-    public ResponseEntity<UpdateResultDto> update(@PathVariable String truckId, FoodUpdateRequestDto foodUpdateRequestDto) {
-        log.info("/api/food/" + truckId);
-
-        return new ResponseEntity<>(service.updateFood(truckId, foodUpdateRequestDto), HttpStatus.OK);
-    }*/
-
     @DeleteMapping("/{truckId}/{id}")
     public ResponseEntity<UpdateResultDto> delete(@PathVariable String truckId, @PathVariable String id) {
         log.info("/api/food/" + truckId + "/" + id);

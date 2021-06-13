@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.gamakdragons.wheretruck.cloud.aws.exception.S3ServiceException;
 import com.gamakdragons.wheretruck.cloud.aws.service.S3Service;
 import com.gamakdragons.wheretruck.cloud.elasticsearch.service.ElasticSearchServiceImpl;
 import com.gamakdragons.wheretruck.common.UpdateResultDto;
@@ -62,9 +63,13 @@ public class FoodServiceImpl implements FoodService {
         }
 
         if(foodSaveRequestDto.getImage() != null) {
-            String foodImageUrl = s3Service.uploadFoodImage(FOOD_IMAGE_BUCKET, truckId, food.getId(), foodSaveRequestDto.getImage());
-            log.info("image uploaded to s3 bucket. url=" + foodImageUrl);
-            food.setImageUrl(foodImageUrl);
+            try {
+                String foodImageUrl = s3Service.uploadImage(FOOD_IMAGE_BUCKET, truckId + "/" + food.getId(), foodSaveRequestDto.getImage());
+                log.info("image uploaded to s3 bucket. url=" + foodImageUrl);
+                food.setImageUrl(foodImageUrl);
+            } catch(S3ServiceException e) {
+                log.error(e.getMessage());
+            }
         }
 
         log.info("food: " + food);
@@ -93,44 +98,6 @@ public class FoodServiceImpl implements FoodService {
                 .build();
     }
 
-    /*@Override
-    public UpdateResultDto updateFood(String truckId, FoodUpdateRequestDto foodUpdateRequestDto) {
-
-        Food food = foodUpdateRequestDto.toEntity();
-
-        if(foodUpdateRequestDto.getImage() != null) {
-            String foodImageUrl = s3Service.uploadFoodImage(FOOD_IMAGE_BUCKET, truckId, food.getId(), foodUpdateRequestDto.getImage());
-            log.info("image uploaded to s3 bucket. url=" + foodImageUrl);
-            food.setImageUrl(foodImageUrl);
-        }
-
-        Map<String, Object> params = new HashMap<>();
-        params.put("food", food.toMap());
-
-        String script = "def target = ctx._source.foods.find(food -> food.id == params.food.id);" +
-                           "target.name = params.food.name;" + 
-                           "target.cost = params.food.cost;" +
-                           "target.description = params.food.description;" +
-                           "target.imageUrl = params.food.imageUrl;";
-        Script inline = new Script(ScriptType.INLINE, "painless", script, params);
-
-        UpdateRequest request = EsRequestFactory.createUpdateWithScriptRequest(TRUCK_INDEX, truckId, inline);
-        UpdateResponse response;
-        try {
-            response = restClient.update(request, RequestOptions.DEFAULT);
-        } catch(IOException e) {
-            log.error("IOException occured.");
-            return UpdateResultDto.builder()
-                .result(e.getLocalizedMessage())
-                .build();
-        }
-
-        return UpdateResultDto.builder()
-                .result(response.getResult().name())
-                .id(food.getId())
-                .build();
-    }*/
-    
     @Override
     public UpdateResultDto deleteFood(String truckId, String id) {
 
@@ -150,6 +117,12 @@ public class FoodServiceImpl implements FoodService {
             return UpdateResultDto.builder()
                     .result(e.getLocalizedMessage())
                     .build();
+        }
+
+        try {
+            s3Service.deleteImage(FOOD_IMAGE_BUCKET, truckId + "/" + id);
+        } catch(S3ServiceException e) {
+            log.error(e.getMessage());
         }
 
         return UpdateResultDto.builder()
