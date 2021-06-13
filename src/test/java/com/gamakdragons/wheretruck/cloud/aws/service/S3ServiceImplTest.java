@@ -68,7 +68,7 @@ public class S3ServiceImplTest {
     }
 
     @Test
-    void testUploadFoodImage() throws IOException {
+    void testUploadImage() throws IOException {
 
         String truckId = UUID.randomUUID().toString();
         String foodId = UUID.randomUUID().toString();
@@ -76,7 +76,7 @@ public class S3ServiceImplTest {
         byte[] imageBinary = new byte[128];
         new Random().nextBytes(imageBinary);
         MockMultipartFile imageFile = new MockMultipartFile("file", null, MediaType.MULTIPART_FORM_DATA_VALUE, imageBinary);
-        String imageUrl = service.uploadFoodImage(FOOD_IMAGE_BUCKET, truckId, foodId, imageFile);
+        String imageUrl = service.uploadImage(FOOD_IMAGE_BUCKET, truckId + foodId, imageFile);
         log.info("image uploaded. url="+ imageUrl);
 
         assertThat(s3Client.doesObjectExist(FOOD_IMAGE_BUCKET, truckId + foodId), is(true));
@@ -87,7 +87,7 @@ public class S3ServiceImplTest {
     }
 
     @Test
-    void testDeleteFoodImage() {
+    void testDeleteImage() {
 
         String truckId = UUID.randomUUID().toString();
         String foodId = UUID.randomUUID().toString();
@@ -95,11 +95,11 @@ public class S3ServiceImplTest {
         byte[] imageBinary = new byte[128];
         new Random().nextBytes(imageBinary);
         MockMultipartFile imageFile = new MockMultipartFile("file", null, MediaType.MULTIPART_FORM_DATA_VALUE, imageBinary);
-        String imageUrl = service.uploadFoodImage(FOOD_IMAGE_BUCKET, truckId, foodId, imageFile);
+        String imageUrl = service.uploadImage(FOOD_IMAGE_BUCKET, truckId + foodId, imageFile);
         log.info("image uploaded. url="+ imageUrl);
 
         assertThat(s3Client.doesObjectExist(FOOD_IMAGE_BUCKET, truckId + foodId), is(true));
-        assertThat(service.deleteFoodImage(FOOD_IMAGE_BUCKET, truckId, foodId), is(true));
+        assertThat(service.deleteImage(FOOD_IMAGE_BUCKET, truckId + foodId), is(true));
     }
 
     public void initS3Client() {
