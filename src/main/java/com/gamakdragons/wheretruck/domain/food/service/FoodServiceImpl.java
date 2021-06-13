@@ -47,12 +47,6 @@ public class FoodServiceImpl implements FoodService {
     public UpdateResultDto saveFood(String truckId, FoodSaveRequestDto foodSaveRequestDto) {
 
         Food food = foodSaveRequestDto.toEntity();
-        if(foodSaveRequestDto.getImage() != null) {
-            String foodImageUrl = s3Service.uploadFoodImage(FOOD_IMAGE_BUCKET, truckId, food.getId(), foodSaveRequestDto.getImage());
-            log.info("image uploaded to s3 bucket. url=" + foodImageUrl);
-            food.setImageUrl(foodImageUrl);
-        }
-        log.info("food: " + food);
 
         String script;
         if(food.getId() == null) {
@@ -66,6 +60,14 @@ public class FoodServiceImpl implements FoodService {
                            "target.description = params.food.description;" +
                            "target.imageUrl = params.food.imageUrl;";   
         }
+
+        if(foodSaveRequestDto.getImage() != null) {
+            String foodImageUrl = s3Service.uploadFoodImage(FOOD_IMAGE_BUCKET, truckId, food.getId(), foodSaveRequestDto.getImage());
+            log.info("image uploaded to s3 bucket. url=" + foodImageUrl);
+            food.setImageUrl(foodImageUrl);
+        }
+
+        log.info("food: " + food);
 
         Map<String, Object> params = new HashMap<>();
         params.put("food", food.toMap());

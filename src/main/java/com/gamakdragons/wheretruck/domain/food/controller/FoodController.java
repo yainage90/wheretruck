@@ -11,9 +11,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +26,7 @@ public class FoodController {
     @Autowired
     private FoodService service;
 
-    @PostMapping("/{truckId}")
+    @RequestMapping(value = {"/{truckId}"}, method = {RequestMethod.POST, RequestMethod.PUT})
     public ResponseEntity<UpdateResultDto> save(@PathVariable String truckId, FoodSaveRequestDto foodSaveRequestDto) {
         log.info("/api/food/" + truckId);
 
