@@ -1,13 +1,10 @@
 package com.gamakdragons.wheretruck.domain.user.service;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 
 import com.gamakdragons.wheretruck.cloud.elasticsearch.service.ElasticSearchServiceImpl;
 import com.gamakdragons.wheretruck.common.DeleteResultDto;
-import com.gamakdragons.wheretruck.common.IndexResultDto;
+import com.gamakdragons.wheretruck.common.IndexUpdateResultDto;
 import com.gamakdragons.wheretruck.common.UpdateResultDto;
 import com.gamakdragons.wheretruck.domain.user.entity.User;
 import com.gamakdragons.wheretruck.util.EsRequestFactory;
@@ -22,8 +19,7 @@ import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.script.Script;
-import org.elasticsearch.script.ScriptType;
+import org.elasticsearch.index.reindex.DeleteByQueryRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -37,6 +33,9 @@ public class UserServiceImpl implements UserService {
 
     @Value("${elasticsearch.index.user.name}")
     private String USER_INDEX;
+
+    @Value("${elasticsearch.index.favorite.name}")
+    private String FAVORITE_INDEX;
 
     private final ElasticSearchServiceImpl restClient;
 
@@ -56,9 +55,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public IndexResultDto saveUser(User user) {
-
-        user.setFavorites(Collections.emptyList());
+    public IndexUpdateResultDto saveUser(User user) {
 
         IndexRequest request = EsRequestFactory.createIndexRequest(USER_INDEX, user.getId(), user);
         IndexResponse response;
@@ -66,13 +63,13 @@ public class UserServiceImpl implements UserService {
             response = restClient.index(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error("IOException occured.");
-            return IndexResultDto.builder()
+            return IndexUpdateResultDto.builder()
                 .result(e.getLocalizedMessage())
                 .build();
 
         }
 
-        return IndexResultDto.builder()
+        return IndexUpdateResultDto.builder()
                 .result(response.getResult().name())
                 .id(response.getId())
                 .build();
@@ -118,14 +115,27 @@ public class UserServiceImpl implements UserService {
                     .build();
         } 
 
+        deleteFavorites(id);
+
         return DeleteResultDto.builder()
                 .result(response.getResult().name())
                 .build();
 
     }
 
+    private void deleteFavorites(String userId) {
 
-    @Override
+        DeleteByQueryRequest request = EsRequestFactory.createDeleteByQuerydRequest(new String[]{FAVORITE_INDEX}, "userId", userId);
+
+        try {
+            restClient.deleteByQuery(request, RequestOptions.DEFAULT);
+        } catch(IOException e) {
+            log.error("IOException occured.");
+        }
+    }
+
+
+    /*@Override
     public UpdateResultDto addFavorite(String userId, String truckId) {
 
         Map<String, Object> params = new HashMap<>();
@@ -179,6 +189,6 @@ public class UserServiceImpl implements UserService {
                 .result(response.getResult().name())
                 .build();
        
-    }
+    }*/
 
 }
