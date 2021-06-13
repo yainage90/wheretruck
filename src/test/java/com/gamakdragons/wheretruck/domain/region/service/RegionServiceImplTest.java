@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+import com.gamakdragons.wheretruck.TestIndexUtil;
 import com.gamakdragons.wheretruck.cloud.elasticsearch.service.ElasticSearchServiceImpl;
 import com.gamakdragons.wheretruck.common.GeoLocation;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
@@ -23,20 +24,12 @@ import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.client.indices.CreateIndexRequest;
-import org.elasticsearch.client.indices.CreateIndexResponse;
-import org.elasticsearch.client.indices.GetIndexRequest;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.common.xcontent.XContentFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -46,7 +39,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import lombok.extern.slf4j.Slf4j;
 
-@SpringBootTest(classes = {RegionServiceImpl.class, ElasticSearchServiceImpl.class, ElasticSearchConfig.class}, 
+@SpringBootTest(classes = {RegionServiceImpl.class, ElasticSearchServiceImpl.class, ElasticSearchConfig.class, TestIndexUtil.class}, 
                 properties = {"spring.config.location=classpath:application-test.yml"})
 @Slf4j
 public class RegionServiceImplTest {
@@ -75,13 +68,13 @@ public class RegionServiceImplTest {
     public void beforeEach() throws IOException {
 
         initRestHighLevelClient();
-        deleteTestRegionIndex();
-        createTestRegionIndex();
+        TestIndexUtil.deleteTestRegionIndex();
+        TestIndexUtil.createTestRegionIndex();
     }
 
     @AfterEach
     public void afterEach() throws IOException {
-        deleteTestRegionIndex();
+        TestIndexUtil.deleteTestRegionIndex();
     }
 
     @Test
@@ -201,151 +194,7 @@ public class RegionServiceImplTest {
         this.esClient = new RestHighLevelClient(builder);
     }
 
-    private void createTestRegionIndex() throws IOException {
-
-        CreateIndexRequest request = new CreateIndexRequest(TEST_REGION_INDEX_NAME);
-
-        request.settings(Settings.builder()
-            .put("index.number_of_shards", 3)
-            .put("index.number_of_replicas", 1)
-        );
-
-        XContentBuilder builder = XContentFactory.jsonBuilder();
-        builder.startObject();
-        {
-            builder.startObject("properties");
-            {
-                builder.startObject("regionName");
-                {
-                    builder.field("type", "keyword");
-                }
-                builder.endObject();
-
-                builder.startObject("regionType");
-                {
-                    builder.field("type", "integer");
-                }
-                builder.endObject();
-
-                builder.startObject("city");
-                {
-                    builder.field("type", "keyword");
-                }
-                builder.endObject();
-
-                builder.startObject("roadAddress");
-                {
-                    builder.field("type", "keyword");
-                }
-                builder.endObject();
-
-                builder.startObject("postAddress");
-                {
-                    builder.field("type", "keyword");
-                }
-                builder.endObject();
-
-                builder.startObject("geoLocation");
-                {
-                    builder.field("type", "geo_point");
-                }
-                builder.endObject();
-                
-                builder.startObject("capacity");
-                {
-                    builder.field("type", "integer");
-                }
-                builder.endObject();
-
-                builder.startObject("cost");
-                {
-                    builder.field("type", "keyword");
-                }
-                builder.endObject();
-
-                builder.startObject("permissionStartDate");
-                {
-                    builder.field("type", "date");
-                }
-                builder.endObject();
-
-                builder.startObject("permissionEndDate");
-                {
-                    builder.field("type", "date");
-                }
-                builder.endObject();
-
-                builder.startObject("closedDays");
-                {
-                    builder.field("type", "keyword");
-                }
-                builder.endObject();
-
-                builder.startObject("weekdayStartTime");
-                {
-                    builder.field("type", "date");
-                    builder.field("format", "hour_minute");
-                }
-                builder.endObject();
-
-                builder.startObject("weekdayEndTime");
-                {
-                    builder.field("type", "date");
-                    builder.field("format", "hour_minute");
-                }
-                builder.endObject();
-
-                builder.startObject("weekendStartTime");
-                {
-                    builder.field("type", "date");
-                    builder.field("format", "hour_minute");
-                }
-                builder.endObject();
-
-                builder.startObject("weekendEndTime");
-                {
-                    builder.field("type", "date");
-                    builder.field("format", "hour_minute");
-                }
-                builder.endObject();
-
-                builder.startObject("restrictedItems");
-                {
-                    builder.field("type", "keyword");
-                }
-                builder.endObject();
-
-                builder.startObject("agencyName");
-                {
-                    builder.field("type", "keyword");
-                }
-                builder.endObject();
-
-                builder.startObject("agencyTel");
-                {
-                    builder.field("type", "keyword");
-                }
-                builder.endObject();
-
-            }
-            builder.endObject();
-        }
-        builder.endObject();
-
-        request.mapping(builder);
-
-        CreateIndexResponse response = esClient.indices().create(request, RequestOptions.DEFAULT);
-        log.info("index created: " + response.index());
-        if(!response.isAcknowledged()) {
-            throw new IOException();
-        }
-
-        try {
-            Thread.sleep(1000);
-        } catch(InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
+    
 
     private List<Region> createTestRegionData() {
 
@@ -384,19 +233,6 @@ public class RegionServiceImplTest {
             Thread.sleep(2000);
         } catch(InterruptedException e) {
             e.printStackTrace();
-        }
-
-    }
-
-    private void deleteTestRegionIndex() throws IOException {
-        GetIndexRequest getIndexRequest = new GetIndexRequest(TEST_REGION_INDEX_NAME);
-        if(esClient.indices().exists(getIndexRequest, RequestOptions.DEFAULT)) {
-            DeleteIndexRequest request = new DeleteIndexRequest(TEST_REGION_INDEX_NAME);
-            AcknowledgedResponse response = esClient.indices().delete(request, RequestOptions.DEFAULT);
-            log.info("index deleted: " + response.isAcknowledged());
-            if(!response.isAcknowledged()) {
-                throw new IOException();
-            }
         }
 
     }
