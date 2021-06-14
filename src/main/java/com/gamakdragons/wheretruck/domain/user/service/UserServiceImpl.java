@@ -8,6 +8,7 @@ import com.gamakdragons.wheretruck.cloud.elasticsearch.service.ElasticSearchServ
 import com.gamakdragons.wheretruck.common.DeleteResultDto;
 import com.gamakdragons.wheretruck.common.IndexUpdateResultDto;
 import com.gamakdragons.wheretruck.common.UpdateResultDto;
+import com.gamakdragons.wheretruck.domain.user.dto.Role;
 import com.gamakdragons.wheretruck.domain.user.entity.User;
 import com.gamakdragons.wheretruck.util.EsRequestFactory;
 import com.google.gson.Gson;
@@ -88,6 +89,33 @@ public class UserServiceImpl implements UserService {
         params.put("nickName", nickName);
         
         String script = "ctx._source.nickName = params.nickName";
+        Script inline = new Script(ScriptType.INLINE, "painless", script, params);
+
+        UpdateRequest request = EsRequestFactory.createUpdateWithScriptRequest(USER_INDEX, userId, inline);
+        UpdateResponse response;
+        try {
+            response = restClient.update(request, RequestOptions.DEFAULT);
+        } catch(IOException e) {
+            log.error("IOException occured.");
+            return UpdateResultDto.builder()
+                .result(e.getLocalizedMessage())
+                .build();
+        }
+
+        return UpdateResultDto.builder()
+                .result(response.getResult().name())
+                .build();
+
+    }
+
+    @Override
+    public UpdateResultDto changeRole(String userId, Role role) {
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("id", userId);
+        params.put("role", role.name());
+        
+        String script = "ctx._source.role = params.role";
         Script inline = new Script(ScriptType.INLINE, "painless", script, params);
 
         UpdateRequest request = EsRequestFactory.createUpdateWithScriptRequest(USER_INDEX, userId, inline);
