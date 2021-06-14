@@ -38,8 +38,8 @@ public class FavoriteController {
         return new ResponseEntity<>(service.findByUserId(userId), HttpStatus.OK);
     }
 
-    @GetMapping("/truck/truckId")
-    public ResponseEntity<SearchResultDto<Favorite>> getByTruckId(String truckId) {
+    @GetMapping("/truck/{truckId}")
+    public ResponseEntity<SearchResultDto<Favorite>> getByTruckId(@PathVariable String truckId) {
         log.info("/favorite/search/truckId. truckId=" + truckId);
 
         return new ResponseEntity<>(service.findByTruckId(truckId), HttpStatus.OK);
