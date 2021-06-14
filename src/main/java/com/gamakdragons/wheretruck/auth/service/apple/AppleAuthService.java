@@ -57,11 +57,11 @@ public class AppleAuthService implements OAuth2Service {
 		if(user != null) {
             log.info("user exists: " + user);
         } else {
-            user = User.builder()
-                        .id(userId)
-                        .nickName(loginRequestDto.getNickName())
-                        .role(loginRequestDto.getRole())
-                        .build();
+
+			user = new User();
+			user.setId(userId);
+			user.setNickName(loginRequestDto.getNickName());
+			user.setRole(loginRequestDto.getRole());
 
             IndexUpdateResultDto result = userService.saveUser(user); 
             log.info("user save result: " + result);
