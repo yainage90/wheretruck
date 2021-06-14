@@ -207,11 +207,12 @@ public class UserServiceImplTest {
 
     private User createTestUserData() {
 
-        return User.builder()
-                    .id(UUID.randomUUID().toString())
-                    .nickName("유저1")
-                    .role(Role.OWNER)
-                    .build();
+        User user = new User();
+        user.setId(UUID.randomUUID().toString());
+        user.setNickName("유저1");
+        user.setRole(Role.OWNER);
+
+        return user;
     }
 
 }
