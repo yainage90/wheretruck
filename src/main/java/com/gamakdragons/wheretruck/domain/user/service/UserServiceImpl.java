@@ -1,6 +1,8 @@
 package com.gamakdragons.wheretruck.domain.user.service;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.gamakdragons.wheretruck.cloud.elasticsearch.service.ElasticSearchServiceImpl;
 import com.gamakdragons.wheretruck.common.DeleteResultDto;
@@ -20,6 +22,8 @@ import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.index.reindex.DeleteByQueryRequest;
+import org.elasticsearch.script.Script;
+import org.elasticsearch.script.ScriptType;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -79,12 +83,14 @@ public class UserServiceImpl implements UserService {
     @Override
     public UpdateResultDto changeNickName(String userId, String nickName) {
 
-        User userToUpdate = User.builder()
-                                .id(userId)
-                                .nickName(nickName)
-                                .build();
+        Map<String, Object> params = new HashMap<>();
+        params.put("id", userId);
+        params.put("nickName", nickName);
+        
+        String script = "ctx._source.nickName = params.nickName";
+        Script inline = new Script(ScriptType.INLINE, "painless", script, params);
 
-        UpdateRequest request = EsRequestFactory.createUpdateRequest(USER_INDEX, userId, userToUpdate);
+        UpdateRequest request = EsRequestFactory.createUpdateWithScriptRequest(USER_INDEX, userId, inline);
         UpdateResponse response;
         try {
             response = restClient.update(request, RequestOptions.DEFAULT);
