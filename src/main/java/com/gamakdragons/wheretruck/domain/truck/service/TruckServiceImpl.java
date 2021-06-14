@@ -110,15 +110,15 @@ public class TruckServiceImpl implements TruckService {
                                     .map(
                                         item -> 
                                             new Truck(
-                                                item.getResponse().getField("id").getValue(),
-                                                item.getResponse().getField("name").getValue(),
+                                                item.getResponse().getSource().get("id").toString(), 
+                                                item.getResponse().getSource().get("name").toString(),
                                                 null,
                                                 null,
-                                                item.getResponse().getField("opened").getValue(),
+                                                Boolean.parseBoolean(item.getResponse().getSource().get("opened").toString()),
                                                 null,
-                                                item.getResponse().getField("numRating").getValue(),
-                                                item.getResponse().getField("starAvg").getValue(),
-                                                item.getResponse().getField("getImageUrl").getValue(),
+                                                Integer.parseInt(item.getResponse().getSource().get("numRating").toString()),
+                                                Float.parseFloat(item.getResponse().getSource().get("starAvg").toString()),
+                                                item.getResponse().getSource().get("imageUrl").toString(),
                                                 null,
                                                 null
                                             )
