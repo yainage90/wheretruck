@@ -129,6 +129,30 @@ public class UserServiceImplTest {
         assertThat(userService.getById(user.getId()).getNickName(), equalTo(nickNameToUpdate));
     }
 
+    @Test
+    void testChangeRole() {
+
+        User user = createTestUserData();
+        indexTestUserData(user);
+
+        UpdateResultDto updateResult = userService.changeRole(user.getId(), Role.USER);
+        try {
+            Thread.sleep(2000);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        assertThat(updateResult.getResult(), is("UPDATED"));
+
+        try {
+            Thread.sleep(2000);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        assertThat(userService.getById(user.getId()).getRole(), is(Role.USER));
+    }
+
 
     @Test
     void testDeleteUser() {
