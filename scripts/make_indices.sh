@@ -103,6 +103,9 @@ curl -XPUT 'http://ec2-13-209-181-246.ap-northeast-2.compute.amazonaws.com:9200/
        "userId": {
          "type": "keyword"
        },
+       "imageUrl": {
+         "type": "keyword"
+       },
        "foods": {
          "type": "nested",
          "properties": {
@@ -173,11 +176,32 @@ curl -XPUT 'http://ec2-13-209-181-246.ap-northeast-2.compute.amazonaws.com:9200/
       },
       "nickName": {
         "type": "keyword"
-      },
-      "favorites": {
-        "type": "nested"
       }
     }
   }
 }'
 
+#favorite
+curl -XPUT 'http://ec2-13-209-181-246.ap-northeast-2.compute.amazonaws.com:9200/favorite?pretty' \
+-u "${ES_USER}:${ES_PASSWORD}" \
+-H 'Content-Type: application/json' \
+-d \
+'{
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 1
+  },
+  "mappings": {
+    "properties": {
+      "id": {
+        "type": "keyword"
+      },
+      "truckId": {
+        "type": "keyword"
+      },
+      "userId": {
+        "type": "keyword"
+      }
+    }
+  }
+}'
