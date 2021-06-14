@@ -174,13 +174,10 @@ public class EsRequestFactory {
         return new GetRequest(indexName, id);
     }
 
-    public static MultiGetRequest createMultiGetRequest(String indexName, List<String> ids) {
+    public static MultiGetRequest createMultiGetRequest(String indexName, List<String> ids, String[] includes, String[] excludes) {
 
         MultiGetRequest request = new MultiGetRequest();
-
-        String[] includes = new String[]{"id", "name", "opened", "numRating", "starAvg"};
-        String[] excludes = new String[]{"geoLocation", "description", "userId", "foods", "ratings"};
-
+ 
         final FetchSourceContext fetchSourceContext = new FetchSourceContext(true, includes, excludes);
 
         ids.stream().forEach(id -> {
