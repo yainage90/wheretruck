@@ -1,11 +1,17 @@
 package com.gamakdragons.wheretruck.cloud.elasticsearch.service;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.nullValue;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import com.gamakdragons.wheretruck.config.ElasticSearchConfig;
 import com.gamakdragons.wheretruck.util.EsRequestFactory;
@@ -23,6 +29,8 @@ import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.get.MultiGetRequest;
+import org.elasticsearch.action.get.MultiGetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
@@ -40,6 +48,8 @@ import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.index.reindex.BulkByScrollResponse;
+import org.elasticsearch.index.reindex.DeleteByQueryRequest;
 import org.json.JSONException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -210,6 +220,101 @@ public class ElasticSearchServiceImplTest {
         assertThat(searchResponse.getHits().getTotalHits().value, is(1L));
     }
 
+    @Test
+    void testDeleteByQuery() throws IOException {
+
+        String id1 = UUID.randomUUID().toString();
+        String name1 = "test1";
+
+        JsonObject obj1 = new JsonObject();
+        obj1.addProperty("id", id1);
+        obj1.addProperty("name", name1);
+        IndexRequest indexRequest1 = EsRequestFactory.createIndexRequest(testIndex, id1, obj1);
+
+        String id2 = UUID.randomUUID().toString();
+        String name2 = "test2";
+
+        JsonObject obj2 = new JsonObject();
+        obj2.addProperty("id", id2);
+        obj2.addProperty("name", name2);
+        IndexRequest indexRequest2 = EsRequestFactory.createIndexRequest(testIndex, id2, obj2);
+
+        IndexResponse indexResponse1 = service.index(indexRequest1, RequestOptions.DEFAULT);
+        assertThat(indexResponse1.getId(), is(id1));
+        IndexResponse indexResponse2 = service.index(indexRequest2, RequestOptions.DEFAULT);
+        assertThat(indexResponse2.getId(), is(id2));
+
+        try {
+            Thread.sleep(2000);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        DeleteByQueryRequest request = EsRequestFactory.createDeleteByQuerydRequest(new String[]{testIndex}, "name", name2);
+        BulkByScrollResponse response = service.deleteByQuery(request, RequestOptions.DEFAULT);
+        assertThat(response.getDeleted(), is(1L));
+
+        try {
+            Thread.sleep(2000);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        GetRequest getObj1Request = EsRequestFactory.createGetRequest(testIndex, obj1.get("id").getAsString());
+        GetResponse getObj1Response = service.get(getObj1Request, RequestOptions.DEFAULT);
+        GetRequest getObj2Request = EsRequestFactory.createGetRequest(testIndex, obj2.get("id").getAsString());
+        GetResponse getObj2Response = service.get(getObj2Request, RequestOptions.DEFAULT);
+
+        assertThat(getObj1Response.getSource(), is(not(nullValue())));
+        assertThat(getObj2Response.getSource(), is(nullValue()));
+    }
+
+    @Test
+    void testMultiGet() throws IOException {
+
+        String id1 = UUID.randomUUID().toString();
+        String name1 = "test1";
+
+        JsonObject obj1 = new JsonObject();
+        obj1.addProperty("id", id1);
+        obj1.addProperty("name", name1);
+        IndexRequest indexRequest1 = EsRequestFactory.createIndexRequest(testIndex, id1, obj1);
+
+        String id2 = UUID.randomUUID().toString();
+        String name2 = "test2";
+
+        JsonObject obj2 = new JsonObject();
+        obj2.addProperty("id", id2);
+        obj2.addProperty("name", name2);
+        IndexRequest indexRequest2 = EsRequestFactory.createIndexRequest(testIndex, id2, obj2);
+
+        IndexResponse indexResponse1 = service.index(indexRequest1, RequestOptions.DEFAULT);
+        assertThat(indexResponse1.getId(), is(id1));
+        IndexResponse indexResponse2 = service.index(indexRequest2, RequestOptions.DEFAULT);
+        assertThat(indexResponse2.getId(), is(id2));
+
+        try {
+            Thread.sleep(2000);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        String[] includes = new String[]{"id"};
+        String[] excludes = new String[]{"name"};
+        MultiGetRequest request = EsRequestFactory.createMultiGetRequest(testIndex, Arrays.asList(id1, id2), includes, excludes);
+
+        MultiGetResponse response = service.multiGet(request, RequestOptions.DEFAULT);
+        assertThat(response.getResponses().length, is(2));
+
+        Arrays.stream(response.getResponses()).forEach(item -> {
+            assertThat(item.getResponse().getSourceAsMap().containsKey("id"), is(true));
+            assertThat(item.getResponse().getSourceAsMap().containsKey("name"), is(false));
+        });
+
+        List<String> ids = Arrays.stream(response.getResponses()).map(item -> item.getResponse().getSource().get("id").toString()).collect(Collectors.toList());
+        assertThat(ids, hasItems(id1, id2));
+    }
+
     public void initRestHighLevelClient() {
 
         CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
@@ -281,5 +386,7 @@ public class ElasticSearchServiceImplTest {
         }
 
     }
+
+    
 }
 
