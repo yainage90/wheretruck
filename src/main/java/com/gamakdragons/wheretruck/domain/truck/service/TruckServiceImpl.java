@@ -94,7 +94,10 @@ public class TruckServiceImpl implements TruckService {
     @Override
     public SearchResultDto<Truck> getByIds(List<String> ids) {
 
-        MultiGetRequest request = EsRequestFactory.createMultiGetRequest(TRUCK_INDEX, ids);
+        String[] includes = new String[]{"id", "name", "opened", "numRating", "starAvg"};
+        String[] excludes = new String[]{"geoLocation", "description", "userId", "foods", "ratings"};
+
+        MultiGetRequest request = EsRequestFactory.createMultiGetRequest(TRUCK_INDEX, ids, includes, excludes);
         MultiGetResponse response;
         try {
             response = restClient.multiGet(request, RequestOptions.DEFAULT);
