@@ -17,10 +17,12 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import com.gamakdragons.wheretruck.TestIndexUtil;
+import com.gamakdragons.wheretruck.cloud.aws.service.S3ServiceImpl;
 import com.gamakdragons.wheretruck.cloud.elasticsearch.service.ElasticSearchServiceImpl;
 import com.gamakdragons.wheretruck.common.IndexUpdateResultDto;
 import com.gamakdragons.wheretruck.common.UpdateResultDto;
 import com.gamakdragons.wheretruck.config.ElasticSearchConfig;
+import com.gamakdragons.wheretruck.config.S3Config;
 import com.gamakdragons.wheretruck.domain.rating.dto.MyRatingDto;
 import com.gamakdragons.wheretruck.domain.rating.entity.Rating;
 import com.gamakdragons.wheretruck.domain.truck.dto.TruckSaveRequestDto;
@@ -39,7 +41,8 @@ import org.springframework.mock.web.MockMultipartFile;
 
 import lombok.extern.slf4j.Slf4j;
 
-@SpringBootTest(classes = {RatingServiceImpl.class, TruckServiceImpl.class, ElasticSearchServiceImpl.class, ElasticSearchConfig.class, TestIndexUtil.class}, 
+@SpringBootTest(classes = {RatingServiceImpl.class, TruckServiceImpl.class, ElasticSearchServiceImpl.class,
+                            ElasticSearchConfig.class, TestIndexUtil.class, S3ServiceImpl.class, S3Config.class}, 
                 properties = {"spring.config.location=classpath:application-test.yml"})
 @Slf4j
 public class RatingServiceImplTest {
@@ -67,6 +70,7 @@ public class RatingServiceImplTest {
 
     @BeforeEach
     public void beforeEach() throws IOException, InterruptedException {
+        TestIndexUtil.initRestHighLevelClient();
         TestIndexUtil.deleteTestTruckIndex();
         TestIndexUtil.createTestTruckIndex();
     }
