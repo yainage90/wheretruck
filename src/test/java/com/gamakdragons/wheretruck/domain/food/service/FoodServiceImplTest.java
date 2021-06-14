@@ -25,11 +25,11 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.DeleteBucketRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
+import com.gamakdragons.wheretruck.TestIndexUtil;
 import com.gamakdragons.wheretruck.cloud.aws.service.S3ServiceImpl;
 import com.gamakdragons.wheretruck.cloud.elasticsearch.service.ElasticSearchServiceImpl;
 import com.gamakdragons.wheretruck.common.IndexUpdateResultDto;
 import com.gamakdragons.wheretruck.common.UpdateResultDto;
-import com.gamakdragons.wheretruck.config.ElasticSearchConfig;
 import com.gamakdragons.wheretruck.config.S3Config;
 import com.gamakdragons.wheretruck.domain.food.dto.FoodSaveRequestDto;
 import com.gamakdragons.wheretruck.domain.food.entity.Food;
@@ -37,6 +37,7 @@ import com.gamakdragons.wheretruck.domain.truck.dto.TruckSaveRequestDto;
 import com.gamakdragons.wheretruck.domain.truck.entity.Truck;
 import com.gamakdragons.wheretruck.domain.truck.service.TruckService;
 import com.gamakdragons.wheretruck.domain.truck.service.TruckServiceImpl;
+import com.gamakdragons.wheretruck.test_config.ElasticSearchTestConfig;
 
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
@@ -55,7 +56,9 @@ import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,7 +70,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import lombok.extern.slf4j.Slf4j;
 
 @SpringBootTest(
-    classes = {TruckServiceImpl.class, FoodServiceImpl.class, ElasticSearchServiceImpl.class, S3ServiceImpl.class, ElasticSearchConfig.class, S3Config.class},
+    classes = {TruckServiceImpl.class, FoodServiceImpl.class, ElasticSearchServiceImpl.class, S3ServiceImpl.class, ElasticSearchTestConfig.class, S3Config.class},
     properties = {"spring.config.location=classpath:application-test.yml"}
 )
 @Slf4j
@@ -107,6 +110,15 @@ public class FoodServiceImplTest {
 
     private RestHighLevelClient esClient;
 
+    @BeforeAll
+    public static void beforeAll() {
+        TestIndexUtil.createElasticSearchTestContainer();
+    }
+
+    @AfterAll
+    public static void afterAll() {
+        TestIndexUtil.closeElasticSearchTestContainer();
+    }
 
     @BeforeEach
     public void beforeEach() throws IOException {

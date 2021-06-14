@@ -21,6 +21,8 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.testcontainers.elasticsearch.ElasticsearchContainer;
+import org.testcontainers.utility.DockerImageName;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -33,10 +35,9 @@ public class TestIndexUtil {
     private static String TEST_FAVORITE_INDEX;
     private static String TEST_USER_INDEX;
 
-    private static String ES_HOST;
-    private static int ES_PORT;
     private static String ES_USER;
     private static String ES_PASSWORD;
+
     private static RestHighLevelClient esClient;
 
 	@Value("${elasticsearch.index.region.name}")
@@ -59,16 +60,6 @@ public class TestIndexUtil {
 		TEST_USER_INDEX = value;
 	}
 
-	@Value("${elasticsearch.host}")
-	public void injectEsHost(String value) {
-		ES_HOST = value;
-	}
-
-    @Value("${elasticsearch.port}")
-	public void injectEsPort(int value) {
-		ES_PORT = value;
-	}
-
     @Value("${elasticsearch.username}")
 	public void injectEsUser(String value) {
 		ES_USER = value;
@@ -79,6 +70,22 @@ public class TestIndexUtil {
 		ES_PASSWORD = value;
 	}
 
+    private static ElasticsearchContainer elasticsearchContainer;
+
+    public static void createElasticSearchTestContainer() {
+
+        DockerImageName dockerImage = DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch").withTag("7.7.0");
+        elasticsearchContainer = new ElasticsearchContainer(dockerImage)
+                                        .withPassword("changgeol");
+        elasticsearchContainer.start();
+
+        System.setProperty("elasticsearch.address", elasticsearchContainer.getHttpHostAddress());
+    }
+
+    public static void closeElasticSearchTestContainer() {
+        elasticsearchContainer.close();
+        elasticsearchContainer.stop();
+    }
 
 	public static void initRestHighLevelClient() {
 
@@ -86,7 +93,7 @@ public class TestIndexUtil {
         credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(ES_USER, ES_PASSWORD));
 
         RestClientBuilder builder = RestClient.builder(
-            new HttpHost(ES_HOST, ES_PORT, "http")
+            HttpHost.create(elasticsearchContainer.getHttpHostAddress())
         )
         .setHttpClientConfigCallback((httpClientBuilder) -> {
             return httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
@@ -114,8 +121,8 @@ public class TestIndexUtil {
         CreateIndexRequest request = new CreateIndexRequest(TEST_REGION_INDEX);
 
         request.settings(Settings.builder()
-            .put("index.number_of_shards", 3)
-            .put("index.number_of_replicas", 1)
+            .put("index.number_of_shards", 1)
+            .put("index.number_of_replicas", 0)
         );
 
         XContentBuilder builder = XContentFactory.jsonBuilder();

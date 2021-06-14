@@ -15,22 +15,17 @@ import com.gamakdragons.wheretruck.TestIndexUtil;
 import com.gamakdragons.wheretruck.cloud.elasticsearch.service.ElasticSearchServiceImpl;
 import com.gamakdragons.wheretruck.common.GeoLocation;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
-import com.gamakdragons.wheretruck.config.ElasticSearchConfig;
 import com.gamakdragons.wheretruck.domain.region.entity.Region;
+import com.gamakdragons.wheretruck.test_config.ElasticSearchTestConfig;
 import com.gamakdragons.wheretruck.util.EsRequestFactory;
 
-import org.apache.http.HttpHost;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.CredentialsProvider;
-import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,7 +34,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import lombok.extern.slf4j.Slf4j;
 
-@SpringBootTest(classes = {RegionServiceImpl.class, ElasticSearchServiceImpl.class, ElasticSearchConfig.class, TestIndexUtil.class}, 
+@SpringBootTest(classes = {RegionServiceImpl.class, ElasticSearchServiceImpl.class, ElasticSearchTestConfig.class, TestIndexUtil.class}, 
                 properties = {"spring.config.location=classpath:application-test.yml"})
 @Slf4j
 public class RegionServiceImplTest {
@@ -64,10 +59,20 @@ public class RegionServiceImplTest {
 
     private RestHighLevelClient esClient;
 
+    @BeforeAll
+    public static void beforeAll() {
+        TestIndexUtil.createElasticSearchTestContainer();
+    }
+
+    @AfterAll
+    public static void afterAll() {
+        TestIndexUtil.closeElasticSearchTestContainer();
+    }
+
     @BeforeEach
     public void beforeEach() throws IOException {
 
-        initRestHighLevelClient();
+        TestIndexUtil.initRestHighLevelClient();
         TestIndexUtil.deleteTestRegionIndex();
         TestIndexUtil.createTestRegionIndex();
     }
@@ -178,23 +183,6 @@ public class RegionServiceImplTest {
         assertThat(result.getNumFound(), is(0));
         assertThat(result.getDocs(), hasSize(0));
     }
-
-    private void initRestHighLevelClient() {
-
-        CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-        credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(ES_USER, ES_PASSWORD));
-
-        RestClientBuilder builder = RestClient.builder(
-            new HttpHost(ES_HOST, ES_PORT, "http")
-        )
-        .setHttpClientConfigCallback((httpClientBuilder) -> {
-            return httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
-        });
-
-        this.esClient = new RestHighLevelClient(builder);
-    }
-
-    
 
     private List<Region> createTestRegionData() {
 

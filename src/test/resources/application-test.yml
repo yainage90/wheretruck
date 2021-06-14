@@ -7,8 +7,8 @@ spring:
     - aws
 
 elasticsearch:
-  host: ec2-13-209-181-246.ap-northeast-2.compute.amazonaws.com
-  port: 9200
+  host: localhost
+  #port: 9200 # 시스템 프로퍼티로 TestContainer 바인딩 된 포트 주입
   index:
     region:
       name: region_test

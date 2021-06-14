@@ -39,7 +39,6 @@ import com.gamakdragons.wheretruck.common.GeoLocation;
 import com.gamakdragons.wheretruck.common.IndexUpdateResultDto;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
 import com.gamakdragons.wheretruck.common.UpdateResultDto;
-import com.gamakdragons.wheretruck.config.ElasticSearchConfig;
 import com.gamakdragons.wheretruck.config.S3Config;
 import com.gamakdragons.wheretruck.domain.favorite.entity.Favorite;
 import com.gamakdragons.wheretruck.domain.favorite.service.FavoriteService;
@@ -52,8 +51,11 @@ import com.gamakdragons.wheretruck.domain.rating.service.RatingService;
 import com.gamakdragons.wheretruck.domain.rating.service.RatingServiceImpl;
 import com.gamakdragons.wheretruck.domain.truck.dto.TruckSaveRequestDto;
 import com.gamakdragons.wheretruck.domain.truck.entity.Truck;
+import com.gamakdragons.wheretruck.test_config.ElasticSearchTestConfig;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,7 +67,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import lombok.extern.slf4j.Slf4j;
 
 @SpringBootTest(
-    classes = {TruckServiceImpl.class, ElasticSearchServiceImpl.class, ElasticSearchConfig.class,
+    classes = {TruckServiceImpl.class, ElasticSearchServiceImpl.class, ElasticSearchTestConfig.class,
                 RatingServiceImpl.class, S3ServiceImpl.class, S3Config.class, FoodServiceImpl.class, FavoriteServiceImpl.class, TestIndexUtil.class}, 
     properties = {"spring.config.location=classpath:application-test.yml"}
 )
@@ -100,13 +102,23 @@ public class TruckServiceTest {
 
     @Value("${cloud.aws.s3.bucket.food_image}")
     private String FOOD_IMAGE_BUCKET;
+   
+    @BeforeAll
+    public static void beforeAll() {
+        TestIndexUtil.createElasticSearchTestContainer();
+    }
+
+    @AfterAll
+    public static void afterAll() {
+        TestIndexUtil.closeElasticSearchTestContainer();
+    }
 
     @BeforeEach
     public void beforeEach() throws IOException {
+
         TestIndexUtil.initRestHighLevelClient();
         TestIndexUtil.deleteTestIndices();
         TestIndexUtil.createTestIndices();
-
         initS3Client();
     }
 
@@ -372,11 +384,7 @@ public class TruckServiceTest {
 
         assertThat(indexResult.getResult(), is("CREATED"));
 
-        try {
-            Thread.sleep(1500);
-        } catch(InterruptedException e) {
-            e.printStackTrace();
-        }
+        
 
         Favorite favorite = new Favorite();
         favorite.setTruckId(truckId);
@@ -384,12 +392,18 @@ public class TruckServiceTest {
 
         assertThat(favoriteService.saveFavorite(favorite).getResult(), is("CREATED"));
 
+        try {
+            Thread.sleep(2000);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
+
         assertThat(favoriteService.findByTruckId(truckId).getNumFound(), is(1));
 
         assertThat(truckService.deleteTruck(truckId).getResult(), is("DELETED"));
 
         try {
-            Thread.sleep(1500);
+            Thread.sleep(2000);
         } catch(InterruptedException e) {
             e.printStackTrace();
         }
@@ -441,206 +455,6 @@ public class TruckServiceTest {
         Truck stoppedTruck = truckService.getById(truckIds.get(0));
         assertThat(stoppedTruck.isOpened(), is(false));
     }
-
-    /*private void initRestHighLevelClient() {
-
-        CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-        credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(ES_USER, ES_PASSWORD));
-
-        RestClientBuilder builder = RestClient.builder(
-            new HttpHost(ES_HOST, ES_PORT, "http")
-        )
-        .setHttpClientConfigCallback((httpClientBuilder) -> {
-            return httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
-        });
-
-        this.esClient = new RestHighLevelClient(builder);
-    }
-
-    private void createTestTruckIndex() throws IOException {
-
-        CreateIndexRequest request = new CreateIndexRequest(TEST_TRUCK_INDEX);
-
-        request.settings(Settings.builder()
-            .put("index.number_of_shards", 3)
-            .put("index.number_of_replicas", 1)
-        );
-
-        XContentBuilder builder = XContentFactory.jsonBuilder();
-        builder.startObject();
-        {
-            builder.startObject("properties");
-            {
-                builder.startObject("id");
-                {
-                    builder.field("type", "keyword");
-                }
-                builder.endObject();
-
-                builder.startObject("name");
-                {
-                    builder.field("type", "keyword");
-                }
-                builder.endObject();
-
-                builder.startObject("geoLocation");
-                {
-                    builder.field("type", "geo_point");
-                }
-                builder.endObject();
-
-                builder.startObject("description");
-                {
-                    builder.field("type", "keyword");
-                }
-                builder.endObject();
-
-                builder.startObject("opened");
-                {
-                    builder.field("type", "boolean");
-                }
-                builder.endObject();
-
-                builder.startObject("userId");
-                {
-                    builder.field("type", "keyword");
-                }
-                builder.endObject();
-                
-                builder.startObject("numRating");
-                {
-                    builder.field("type", "integer");
-                }
-                builder.endObject();
-
-                builder.startObject("starAvg");
-                {
-                    builder.field("type", "float");
-                }
-                builder.endObject();
-
-                builder.startObject("imageUrl");
-                {
-                    builder.field("type", "keyword");
-                }
-                builder.endObject();
-
-                builder.startObject("foods");
-                {
-                    builder.field("type", "nested");
-                    builder.startObject("properties");
-                    {
-                        builder.startObject("id");
-                        {
-                            builder.field("type", "keyword");
-                        }
-                        builder.endObject();
-                        builder.startObject("truckId");
-                        {
-                            builder.field("type", "keyword");
-                        }
-                        builder.endObject();
-                        builder.startObject("name");
-                        {
-                            builder.field("type", "keyword");
-                        }
-                        builder.endObject();
-                        builder.startObject("cost");
-                        {
-                            builder.field("type", "integer");
-                        }
-                        builder.endObject();
-                        builder.startObject("description");
-                        {
-                            builder.field("type", "keyword");
-                        }
-                        builder.endObject();
-                        builder.startObject("image");
-                        {
-                            builder.field("type", "dense_vector");
-                            builder.field("dims", 128);
-                        }
-                        builder.endObject();
-                    }
-                    builder.endObject();
-                }
-                builder.endObject();
-                builder.startObject("ratings");
-                {
-                    builder.field("type", "nested");
-                    builder.startObject("properties");
-                        builder.startObject("id");
-                        {
-                            builder.field("type", "keyword");
-                        }
-                        builder.endObject();
-                        builder.startObject("truckId");
-                        {
-                            builder.field("type", "keyword");
-                        }
-                        builder.endObject();
-                        builder.startObject("userId");
-                        {
-                            builder.field("type", "keyword");
-                        }
-                        builder.endObject();
-                        builder.startObject("star");
-                        {
-                            builder.field("type", "double");
-                        }
-                        builder.endObject();
-                        builder.startObject("comment");
-                        {
-                            builder.field("type", "keyword");
-                        }
-                        builder.endObject();
-                        builder.startObject("createdDate");
-                        {
-                            builder.field("type", "date");
-                            builder.field("format", "yyyy-MM-dd HH:mm:ss");
-                        }
-                        builder.endObject();
-                        builder.startObject("updatedDate");
-                        {
-                            builder.field("type", "date");
-                            builder.field("format", "yyyy-MM-dd HH:mm:ss");
-                        }
-                        builder.endObject();
-                    builder.endObject();
-                }
-                builder.endObject();
-            }
-            builder.endObject();
-        }
-        builder.endObject();
-
-        request.mapping(builder);
-
-        CreateIndexResponse response = esClient.indices().create(request, RequestOptions.DEFAULT);
-        log.info("index created: " + response.index());
-        if(!response.isAcknowledged()) {
-            throw new IOException();
-        }
-
-        try {
-            Thread.sleep(1500);
-        } catch(InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void deleteTestTruckIndex() throws IOException {
-        GetIndexRequest getIndexRequest = new GetIndexRequest(TEST_TRUCK_INDEX);
-        if(esClient.indices().exists(getIndexRequest, RequestOptions.DEFAULT)) {
-            DeleteIndexRequest request = new DeleteIndexRequest(TEST_TRUCK_INDEX);
-            AcknowledgedResponse response = esClient.indices().delete(request, RequestOptions.DEFAULT);
-            log.info("index deleted: " + response.isAcknowledged());
-            if(!response.isAcknowledged()) {
-                throw new IOException();
-            }
-        }
-
-    }*/
 
     private List<TruckSaveRequestDto> createTestTruckSaveRequestDtos() {
 
@@ -711,12 +525,11 @@ public class TruckServiceTest {
             log.info("rating index result: " + updateResult.getResult());
             assertThat(updateResult.getResult(), is("UPDATED"));
 
-        try {
-            Thread.sleep(1000);
-        } catch(InterruptedException e) {
-            e.printStackTrace();
-        }
-
+            try {
+                Thread.sleep(2000);
+            } catch(InterruptedException e) {
+                e.printStackTrace();
+            }
         });
 
         try {
@@ -745,6 +558,12 @@ public class TruckServiceTest {
         }
 
         log.info("bucket does not exist: " + bucketName);
+
+        try {
+            Thread.sleep(2000);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     private void deleteAllBucketObjects() {
@@ -777,5 +596,7 @@ public class TruckServiceTest {
             e.printStackTrace();
         }
     }
+
+    
 
 }

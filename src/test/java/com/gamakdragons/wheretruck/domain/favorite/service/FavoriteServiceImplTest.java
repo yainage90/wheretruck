@@ -14,17 +14,19 @@ import com.gamakdragons.wheretruck.TestIndexUtil;
 import com.gamakdragons.wheretruck.cloud.elasticsearch.service.ElasticSearchServiceImpl;
 import com.gamakdragons.wheretruck.common.IndexUpdateResultDto;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
-import com.gamakdragons.wheretruck.config.ElasticSearchConfig;
 import com.gamakdragons.wheretruck.domain.favorite.entity.Favorite;
+import com.gamakdragons.wheretruck.test_config.ElasticSearchTestConfig;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest(classes = {FavoriteServiceImpl.class, ElasticSearchServiceImpl.class, ElasticSearchConfig.class, TestIndexUtil.class}, 
+@SpringBootTest(classes = {FavoriteServiceImpl.class, ElasticSearchServiceImpl.class, ElasticSearchTestConfig.class, TestIndexUtil.class}, 
                 properties = {"spring.config.location=classpath:application-test.yml"})
 public class FavoriteServiceImplTest {
 
@@ -42,6 +44,16 @@ public class FavoriteServiceImplTest {
 
     @Value("${elasticsearch.password}")
     private String ES_PASSWORD;
+
+	@BeforeAll
+    public static void beforeAll() {
+        TestIndexUtil.createElasticSearchTestContainer();
+    }
+
+    @AfterAll
+    public static void afterAll() {
+        TestIndexUtil.closeElasticSearchTestContainer();
+    }
 
 	@BeforeEach
 	public void setup() throws IOException {
