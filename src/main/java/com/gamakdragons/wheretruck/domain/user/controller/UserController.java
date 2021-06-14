@@ -22,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 public class UserController {
 
     @Autowired
-    private UserService service;
+    private UserService userService;
 
     @GetMapping("/me")
     public ResponseEntity<User> getById(HttpServletRequest httpServletRequest) {
@@ -30,7 +30,7 @@ public class UserController {
 
         String userId = httpServletRequest.getAttribute("userId").toString();
 
-        return new ResponseEntity<>(service.getById(userId), HttpStatus.OK);
+        return new ResponseEntity<>(userService.getById(userId), HttpStatus.OK);
     }
 
     @PutMapping("/nickname")
@@ -40,6 +40,6 @@ public class UserController {
 
         log.info("/api/user. nickName=" + nickName);
 
-        return new ResponseEntity<>(service.changeNickName(userId, nickName), HttpStatus.OK);
+        return new ResponseEntity<>(userService.changeNickName(userId, nickName), HttpStatus.OK);
     }
 }

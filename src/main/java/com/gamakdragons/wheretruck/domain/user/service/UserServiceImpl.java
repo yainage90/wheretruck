@@ -115,7 +115,7 @@ public class UserServiceImpl implements UserService {
                     .build();
         } 
 
-        deleteFavorites(id);
+        deleteRelatedFavorites(id);
 
         return DeleteResultDto.builder()
                 .result(response.getResult().name())
@@ -123,7 +123,7 @@ public class UserServiceImpl implements UserService {
 
     }
 
-    private void deleteFavorites(String userId) {
+    private void deleteRelatedFavorites(String userId) {
 
         DeleteByQueryRequest request = EsRequestFactory.createDeleteByQuerydRequest(new String[]{FAVORITE_INDEX}, "userId", userId);
 
@@ -133,62 +133,5 @@ public class UserServiceImpl implements UserService {
             log.error("IOException occured.");
         }
     }
-
-
-    /*@Override
-    public UpdateResultDto addFavorite(String userId, String truckId) {
-
-        Map<String, Object> params = new HashMap<>();
-        params.put("truckId", truckId);
-
-        String script = "if(ctx._source.favorites == null) {ctx._source.favorites = new ArrayList();}" + 
-                        "ctx._source.favorites.add(params.truckId);";
-        Script inline = new Script(ScriptType.INLINE, "painless", script, params);
-
-        UpdateRequest request = EsRequestFactory.createUpdateWithScriptRequest(USER_INDEX, userId, inline);
-
-        UpdateResponse response;
-        try {
-            response = restClient.update(request, RequestOptions.DEFAULT);
-        } catch(IOException e) {
-            log.error("IOException occured.");
-            return UpdateResultDto.builder()
-                .result(e.getLocalizedMessage())
-                .build();
-
-        }
-
-        return UpdateResultDto.builder()
-                .result(response.getResult().name())
-                .build();
-    }
-
-
-    @Override
-    public UpdateResultDto deleteFavorite(String userId, String truckId) {
-
-        Map<String, Object> params = new HashMap<>();
-        params.put("truckId", truckId);
-
-        String script = "ctx._source.favorites.removeIf(truckId -> truckId == params.truckId);";
-        Script inline = new Script(ScriptType.INLINE, "painless", script, params);
-
-        UpdateRequest request = EsRequestFactory.createUpdateWithScriptRequest(USER_INDEX, userId, inline);
-        UpdateResponse response;
-
-        try {
-            response = restClient.update(request, RequestOptions.DEFAULT);
-        } catch(IOException e) {
-            log.error("IOException occured.");
-            return UpdateResultDto.builder()
-                    .result(e.getLocalizedMessage())
-                    .build();
-        }
-
-        return UpdateResultDto.builder()
-                .result(response.getResult().name())
-                .build();
-       
-    }*/
 
 }
