@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 
 import com.gamakdragons.wheretruck.cloud.aws.exception.S3ServiceException;
 import com.gamakdragons.wheretruck.cloud.aws.service.S3Service;
-import com.gamakdragons.wheretruck.cloud.elasticsearch.service.ElasticSearchServiceImpl;
+import com.gamakdragons.wheretruck.cloud.elasticsearch.service.ElasticSearchService;
 import com.gamakdragons.wheretruck.common.DeleteResultDto;
 import com.gamakdragons.wheretruck.common.GeoLocation;
 import com.gamakdragons.wheretruck.common.IndexUpdateResultDto;
@@ -59,12 +59,12 @@ public class TruckServiceImpl implements TruckService {
     @Value("${cloud.aws.s3.bucket.food_image}")
     private String FOOD_IMAGE_BUCKET;
 
-    private final ElasticSearchServiceImpl restClient;
+    private final ElasticSearchService restClient;
     private final S3Service s3Service;
 
 
     @Autowired
-    public TruckServiceImpl(ElasticSearchServiceImpl restClient, S3Service s3Service) {
+    public TruckServiceImpl(ElasticSearchService restClient, S3Service s3Service) {
         this.restClient = restClient;
         this.s3Service = s3Service;
     }
