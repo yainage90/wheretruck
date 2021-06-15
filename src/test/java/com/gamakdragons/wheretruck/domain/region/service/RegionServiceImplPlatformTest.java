@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.UUID;
 
 import com.gamakdragons.wheretruck.TestIndexUtil;
-import com.gamakdragons.wheretruck.cloud.elasticsearch.service.ElasticSearchServiceImpl;
 import com.gamakdragons.wheretruck.common.GeoLocation;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
 import com.gamakdragons.wheretruck.domain.region.entity.Region;
@@ -34,10 +33,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import lombok.extern.slf4j.Slf4j;
 
-@SpringBootTest(classes = {RegionServiceImpl.class, ElasticSearchServiceImpl.class, ElasticSearchTestConfig.class, TestIndexUtil.class}, 
+@SpringBootTest(classes = {RegionServiceImpl.class, ElasticSearchTestConfig.class, TestIndexUtil.class}, 
                 properties = {"spring.config.location=classpath:application-test.yml"})
 @Slf4j
-public class RegionServiceImplTest {
+public class RegionServiceImplPlatformTest {
 
     @Autowired
     private RegionService service;
@@ -45,18 +44,7 @@ public class RegionServiceImplTest {
     @Value("${elasticsearch.index.region.name}")
     private String TEST_REGION_INDEX_NAME;
 
-    @Value("${elasticsearch.host}")
-    private String ES_HOST;
-
-    @Value("${elasticsearch.port}")
-    private int ES_PORT;
-
-    @Value("${elasticsearch.username}")
-    private String ES_USER;
-
-    @Value("${elasticsearch.password}")
-    private String ES_PASSWORD;
-
+    @Autowired
     private RestHighLevelClient esClient;
 
     @BeforeAll
@@ -92,7 +80,9 @@ public class RegionServiceImplTest {
 
         assertThat(result.getStatus(), is("OK"));
         assertThat(result.getNumFound(), is(regions.size()));
-        assertThat(result.getDocs(), contains(regions));
+        regions.forEach(region -> {
+            assertThat(result.getDocs(), hasItem(region));
+        });
     }
 
     @Test

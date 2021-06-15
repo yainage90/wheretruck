@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
 
 import com.gamakdragons.wheretruck.TestIndexUtil;
 import com.gamakdragons.wheretruck.cloud.aws.service.S3ServiceImpl;
-import com.gamakdragons.wheretruck.cloud.elasticsearch.service.ElasticSearchServiceImpl;
 import com.gamakdragons.wheretruck.common.IndexUpdateResultDto;
 import com.gamakdragons.wheretruck.common.UpdateResultDto;
 import com.gamakdragons.wheretruck.config.S3Config;
@@ -43,11 +42,10 @@ import org.springframework.mock.web.MockMultipartFile;
 
 import lombok.extern.slf4j.Slf4j;
 
-@SpringBootTest(classes = {RatingServiceImpl.class, TruckServiceImpl.class, ElasticSearchServiceImpl.class,
-                            ElasticSearchTestConfig.class, TestIndexUtil.class, S3ServiceImpl.class, S3Config.class}, 
+@SpringBootTest(classes = {RatingServiceImpl.class, TruckServiceImpl.class, ElasticSearchTestConfig.class, TestIndexUtil.class, S3ServiceImpl.class, S3Config.class}, 
                 properties = {"spring.config.location=classpath:application-test.yml"})
 @Slf4j
-public class RatingServiceImplTest {
+public class RatingServiceImplPlatformTest {
 
     @Autowired
     private TruckService truckService;
@@ -57,18 +55,6 @@ public class RatingServiceImplTest {
     
     @Value("${elasticsearch.index.truck.name}")
     private String TEST_TRUCK_INDEX;
-
-    @Value("${elasticsearch.host}")
-    private String ES_HOST;
-
-    @Value("${elasticsearch.port}")
-    private int ES_PORT;
-
-    @Value("${elasticsearch.username}")
-    private String ES_USER;
-
-    @Value("${elasticsearch.password}")
-    private String ES_PASSWORD;
 
     @BeforeAll
     public static void beforeAll() {

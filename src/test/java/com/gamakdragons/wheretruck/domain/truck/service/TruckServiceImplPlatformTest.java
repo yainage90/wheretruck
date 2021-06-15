@@ -33,7 +33,6 @@ import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.gamakdragons.wheretruck.TestIndexUtil;
 import com.gamakdragons.wheretruck.cloud.aws.service.S3ServiceImpl;
-import com.gamakdragons.wheretruck.cloud.elasticsearch.service.ElasticSearchServiceImpl;
 import com.gamakdragons.wheretruck.common.DeleteResultDto;
 import com.gamakdragons.wheretruck.common.GeoLocation;
 import com.gamakdragons.wheretruck.common.IndexUpdateResultDto;
@@ -67,12 +66,12 @@ import org.springframework.mock.web.MockMultipartFile;
 import lombok.extern.slf4j.Slf4j;
 
 @SpringBootTest(
-    classes = {TruckServiceImpl.class, ElasticSearchServiceImpl.class, ElasticSearchTestConfig.class,
+    classes = {TruckServiceImpl.class, ElasticSearchTestConfig.class,
                 RatingServiceImpl.class, S3ServiceImpl.class, S3Config.class, FoodServiceImpl.class, FavoriteServiceImpl.class, TestIndexUtil.class}, 
     properties = {"spring.config.location=classpath:application-test.yml"}
 )
 @Slf4j
-public class TruckServiceTest {
+public class TruckServiceImplPlatformTest {
 
     @Autowired
     private TruckService truckService;

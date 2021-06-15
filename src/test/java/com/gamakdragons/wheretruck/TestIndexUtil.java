@@ -76,7 +76,7 @@ public class TestIndexUtil {
 
         DockerImageName dockerImage = DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch").withTag("7.7.0");
         elasticsearchContainer = new ElasticsearchContainer(dockerImage)
-                                        .withPassword("changgeol");
+                                        .withPassword("test");
         elasticsearchContainer.start();
 
         System.setProperty("elasticsearch.address", elasticsearchContainer.getHttpHostAddress());

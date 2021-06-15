@@ -9,50 +9,47 @@ import java.io.IOException;
 import java.util.UUID;
 
 import com.gamakdragons.wheretruck.TestIndexUtil;
-import com.gamakdragons.wheretruck.cloud.elasticsearch.service.ElasticSearchServiceImpl;
 import com.gamakdragons.wheretruck.common.DeleteResultDto;
 import com.gamakdragons.wheretruck.common.IndexUpdateResultDto;
 import com.gamakdragons.wheretruck.common.UpdateResultDto;
-import com.gamakdragons.wheretruck.config.ElasticSearchConfig;
 import com.gamakdragons.wheretruck.domain.favorite.entity.Favorite;
 import com.gamakdragons.wheretruck.domain.favorite.service.FavoriteService;
 import com.gamakdragons.wheretruck.domain.favorite.service.FavoriteServiceImpl;
 import com.gamakdragons.wheretruck.domain.user.dto.Role;
 import com.gamakdragons.wheretruck.domain.user.entity.User;
+import com.gamakdragons.wheretruck.test_config.ElasticSearchTestConfig;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import lombok.extern.slf4j.Slf4j;
 
-@SpringBootTest(classes = {UserServiceImpl.class, ElasticSearchServiceImpl.class, ElasticSearchConfig.class, FavoriteServiceImpl.class, TestIndexUtil.class}, 
+@SpringBootTest(classes = {UserServiceImpl.class, ElasticSearchTestConfig.class, FavoriteServiceImpl.class, TestIndexUtil.class}, 
                 properties = {"spring.config.location=classpath:application-test.yml"})
 @Slf4j
-public class UserServiceImplTest {
+public class UserServiceImplPlatformTest {
 
     @Autowired
     private UserService userService;
     
     @Autowired
     private FavoriteService favoriteService;
+
+    @BeforeAll
+    public static void beforeAll() {
+        TestIndexUtil.createElasticSearchTestContainer();
+    }
+
+    @AfterAll
+    public static void afterAll() {
+        TestIndexUtil.closeElasticSearchTestContainer();
+    }
     
-
-    @Value("${elasticsearch.host}")
-    private String ES_HOST;
-
-    @Value("${elasticsearch.port}")
-    private int ES_PORT;
-
-    @Value("${elasticsearch.username}")
-    private String ES_USER;
-
-    @Value("${elasticsearch.password}")
-    private String ES_PASSWORD;
-
     @BeforeEach
     public void beforeEach() throws IOException {
         TestIndexUtil.initRestHighLevelClient();

@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.util.UUID;
 
 import com.gamakdragons.wheretruck.TestIndexUtil;
-import com.gamakdragons.wheretruck.cloud.elasticsearch.service.ElasticSearchServiceImpl;
 import com.gamakdragons.wheretruck.common.IndexUpdateResultDto;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
 import com.gamakdragons.wheretruck.domain.favorite.entity.Favorite;
@@ -23,27 +22,14 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest(classes = {FavoriteServiceImpl.class, ElasticSearchServiceImpl.class, ElasticSearchTestConfig.class, TestIndexUtil.class}, 
+@SpringBootTest(classes = {FavoriteServiceImpl.class, ElasticSearchTestConfig.class, TestIndexUtil.class}, 
                 properties = {"spring.config.location=classpath:application-test.yml"})
-public class FavoriteServiceImplTest {
+public class FavoriteServiceImplPlatformTest {
 
 	@Autowired
 	private FavoriteService favoriteService;
-
-    @Value("${elasticsearch.host}")
-    private String ES_HOST;
-
-    @Value("${elasticsearch.port}")
-    private int ES_PORT;
-
-    @Value("${elasticsearch.username}")
-    private String ES_USER;
-
-    @Value("${elasticsearch.password}")
-    private String ES_PASSWORD;
 
 	@BeforeAll
     public static void beforeAll() {
