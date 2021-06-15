@@ -6,7 +6,6 @@ import java.util.Collections;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import com.gamakdragons.wheretruck.cloud.elasticsearch.service.ElasticSearchService;
 import com.gamakdragons.wheretruck.common.DeleteResultDto;
 import com.gamakdragons.wheretruck.common.IndexUpdateResultDto;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
@@ -21,6 +20,7 @@ import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.rest.RestStatus;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -36,7 +36,7 @@ public class FavoriteServiceImpl implements FavoriteService {
 	@Value("${elasticsearch.index.favorite.name}")
     private String FAVORITE_INDEX_NAME;
 
-    private final ElasticSearchService esService;
+    private final RestHighLevelClient esClient;
 
 	@Override
     public SearchResultDto<Favorite> findByTruckId(String truckId) {
@@ -45,7 +45,7 @@ public class FavoriteServiceImpl implements FavoriteService {
 
         SearchResponse response;
         try {
-            response = esService.search(request, RequestOptions.DEFAULT);
+            response = esClient.search(request, RequestOptions.DEFAULT);
             log.info("total hits: " + response.getHits().getTotalHits());
         } catch(IOException e) {
             log.error("IOException occured.");
@@ -63,7 +63,7 @@ public class FavoriteServiceImpl implements FavoriteService {
 
         SearchResponse response;
         try {
-            response = esService.search(request, RequestOptions.DEFAULT);
+            response = esClient.search(request, RequestOptions.DEFAULT);
             log.info("total hits: " + response.getHits().getTotalHits());
         } catch(IOException e) {
             log.error("IOException occured.");
@@ -102,7 +102,7 @@ public class FavoriteServiceImpl implements FavoriteService {
         IndexRequest request = EsRequestFactory.createIndexRequest(FAVORITE_INDEX_NAME, favorite.getId(), favorite);
         IndexResponse response;
         try {
-            response = esService.index(request, RequestOptions.DEFAULT);
+            response = esClient.index(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error("IOException occured.");
             return IndexUpdateResultDto.builder()
@@ -124,7 +124,7 @@ public class FavoriteServiceImpl implements FavoriteService {
         DeleteRequest request = EsRequestFactory.createDeleteByIdRequest(FAVORITE_INDEX_NAME, id);
         DeleteResponse response;
         try {
-            response = esService.delete(request, RequestOptions.DEFAULT);
+            response = esClient.delete(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error(e.getMessage());
             return DeleteResultDto.builder()

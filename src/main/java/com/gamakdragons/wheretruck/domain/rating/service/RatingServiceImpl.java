@@ -12,7 +12,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import com.gamakdragons.wheretruck.cloud.elasticsearch.service.ElasticSearchServiceImpl;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
 import com.gamakdragons.wheretruck.common.UpdateResultDto;
 import com.gamakdragons.wheretruck.domain.rating.dto.MyRatingDto;
@@ -25,28 +24,25 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class RatingServiceImpl implements RatingService {
     
     @Value("${elasticsearch.index.truck.name}")
     private String TRUCK_INDEX;
 
-    private final ElasticSearchServiceImpl restClient;
-
-    @Autowired
-    public RatingServiceImpl (ElasticSearchServiceImpl restClient) {
-        this.restClient = restClient;
-    }
+    private final RestHighLevelClient esClient;
 
     @Override
     public UpdateResultDto saveRating(String truckId, Rating rating) {
@@ -83,7 +79,7 @@ public class RatingServiceImpl implements RatingService {
 
         UpdateResponse response;
         try {
-            response = restClient.update(request, RequestOptions.DEFAULT);
+            response = esClient.update(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error("IOException occured.");
             return UpdateResultDto.builder()
@@ -113,7 +109,7 @@ public class RatingServiceImpl implements RatingService {
         UpdateResponse response;
 
         try {
-            response = restClient.update(request, RequestOptions.DEFAULT);
+            response = esClient.update(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error("IOException occured.");
             return UpdateResultDto.builder()
@@ -131,7 +127,7 @@ public class RatingServiceImpl implements RatingService {
 
         SearchResponse response;
         try {
-            response = restClient.search(request, RequestOptions.DEFAULT);
+            response = esClient.search(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error(e.getMessage());
             return makeErrorSearhResultDtoFromSearchResponse();

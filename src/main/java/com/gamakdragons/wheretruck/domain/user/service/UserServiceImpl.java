@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.gamakdragons.wheretruck.cloud.elasticsearch.service.ElasticSearchServiceImpl;
 import com.gamakdragons.wheretruck.common.DeleteResultDto;
 import com.gamakdragons.wheretruck.common.IndexUpdateResultDto;
 import com.gamakdragons.wheretruck.common.UpdateResultDto;
@@ -22,6 +21,7 @@ import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.reindex.DeleteByQueryRequest;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
@@ -42,7 +42,7 @@ public class UserServiceImpl implements UserService {
     @Value("${elasticsearch.index.favorite.name}")
     private String FAVORITE_INDEX;
 
-    private final ElasticSearchServiceImpl restClient;
+    private final RestHighLevelClient esClient;
 
     @Override
     public User getById(String id) {
@@ -50,7 +50,7 @@ public class UserServiceImpl implements UserService {
         GetRequest request = EsRequestFactory.createGetRequest(USER_INDEX, id);
         GetResponse getResponse;
         try {
-            getResponse = restClient.get(request, RequestOptions.DEFAULT);
+            getResponse = esClient.get(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error("IOException occured.");
             return null;
@@ -65,7 +65,7 @@ public class UserServiceImpl implements UserService {
         IndexRequest request = EsRequestFactory.createIndexRequest(USER_INDEX, user.getId(), user);
         IndexResponse response;
         try {
-            response = restClient.index(request, RequestOptions.DEFAULT);
+            response = esClient.index(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error("IOException occured.");
             return IndexUpdateResultDto.builder()
@@ -94,7 +94,7 @@ public class UserServiceImpl implements UserService {
         UpdateRequest request = EsRequestFactory.createUpdateWithScriptRequest(USER_INDEX, userId, inline);
         UpdateResponse response;
         try {
-            response = restClient.update(request, RequestOptions.DEFAULT);
+            response = esClient.update(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error("IOException occured.");
             return UpdateResultDto.builder()
@@ -121,7 +121,7 @@ public class UserServiceImpl implements UserService {
         UpdateRequest request = EsRequestFactory.createUpdateWithScriptRequest(USER_INDEX, userId, inline);
         UpdateResponse response;
         try {
-            response = restClient.update(request, RequestOptions.DEFAULT);
+            response = esClient.update(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error("IOException occured.");
             return UpdateResultDto.builder()
@@ -141,7 +141,7 @@ public class UserServiceImpl implements UserService {
         DeleteRequest request = EsRequestFactory.createDeleteByIdRequest(USER_INDEX, id);
         DeleteResponse response;
         try {
-            response = restClient.delete(request, RequestOptions.DEFAULT);
+            response = esClient.delete(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error(e.getMessage());
             return DeleteResultDto.builder()
@@ -162,7 +162,7 @@ public class UserServiceImpl implements UserService {
         DeleteByQueryRequest request = EsRequestFactory.createDeleteByQuerydRequest(new String[]{FAVORITE_INDEX}, "userId", userId);
 
         try {
-            restClient.deleteByQuery(request, RequestOptions.DEFAULT);
+            esClient.deleteByQuery(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error("IOException occured.");
         }

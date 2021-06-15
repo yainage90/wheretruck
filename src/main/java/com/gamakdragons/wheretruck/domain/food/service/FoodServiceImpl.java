@@ -8,7 +8,6 @@ import java.util.UUID;
 
 import com.gamakdragons.wheretruck.cloud.aws.exception.S3ServiceException;
 import com.gamakdragons.wheretruck.cloud.aws.service.S3Service;
-import com.gamakdragons.wheretruck.cloud.elasticsearch.service.ElasticSearchServiceImpl;
 import com.gamakdragons.wheretruck.common.UpdateResultDto;
 import com.gamakdragons.wheretruck.domain.food.dto.FoodSaveRequestDto;
 import com.gamakdragons.wheretruck.domain.food.entity.Food;
@@ -17,6 +16,7 @@ import com.gamakdragons.wheretruck.util.EsRequestFactory;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,12 +35,12 @@ public class FoodServiceImpl implements FoodService {
     @Value("${cloud.aws.s3.bucket.food_image}")
     private String FOOD_IMAGE_BUCKET;
 
-    private final ElasticSearchServiceImpl restClient;
+    private final RestHighLevelClient esClient;
     private final S3Service s3Service;
 
     @Autowired
-    public FoodServiceImpl(ElasticSearchServiceImpl restClient, S3Service s3Service) {
-        this.restClient = restClient;
+    public FoodServiceImpl(RestHighLevelClient esClient, S3Service s3Service) {
+        this.esClient= esClient;
         this.s3Service = s3Service;
     }
 
@@ -83,7 +83,7 @@ public class FoodServiceImpl implements FoodService {
 
         UpdateResponse response;
         try {
-            response = restClient.update(request, RequestOptions.DEFAULT);
+            response = esClient.update(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error("IOException occured.");
             return UpdateResultDto.builder()
@@ -111,7 +111,7 @@ public class FoodServiceImpl implements FoodService {
         UpdateResponse response;
 
         try {
-            response = restClient.update(request, RequestOptions.DEFAULT);
+            response = esClient.update(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error("IOException occured.");
             return UpdateResultDto.builder()
@@ -148,7 +148,7 @@ public class FoodServiceImpl implements FoodService {
         UpdateResponse response;
 
         try {
-            response = restClient.update(request, RequestOptions.DEFAULT);
+            response = esClient.update(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error("IOException occured.");
             return UpdateResultDto.builder()

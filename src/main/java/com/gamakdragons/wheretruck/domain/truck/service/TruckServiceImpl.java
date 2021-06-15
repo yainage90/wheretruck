@@ -10,7 +10,6 @@ import java.util.stream.Collectors;
 
 import com.gamakdragons.wheretruck.cloud.aws.exception.S3ServiceException;
 import com.gamakdragons.wheretruck.cloud.aws.service.S3Service;
-import com.gamakdragons.wheretruck.cloud.elasticsearch.service.ElasticSearchService;
 import com.gamakdragons.wheretruck.common.DeleteResultDto;
 import com.gamakdragons.wheretruck.common.GeoLocation;
 import com.gamakdragons.wheretruck.common.IndexUpdateResultDto;
@@ -33,6 +32,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.reindex.DeleteByQueryRequest;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.script.Script;
@@ -59,13 +59,13 @@ public class TruckServiceImpl implements TruckService {
     @Value("${cloud.aws.s3.bucket.food_image}")
     private String FOOD_IMAGE_BUCKET;
 
-    private final ElasticSearchService restClient;
+    private final RestHighLevelClient esClient;
     private final S3Service s3Service;
 
 
     @Autowired
-    public TruckServiceImpl(ElasticSearchService restClient, S3Service s3Service) {
-        this.restClient = restClient;
+    public TruckServiceImpl(RestHighLevelClient esClient, S3Service s3Service) {
+        this.esClient = esClient;
         this.s3Service = s3Service;
     }
 
@@ -75,7 +75,7 @@ public class TruckServiceImpl implements TruckService {
         GetRequest request = EsRequestFactory.createGetRequest(TRUCK_INDEX, id);
         GetResponse response;
         try {
-            response = restClient.get(request, RequestOptions.DEFAULT);
+            response = esClient.get(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error("IOException occured.");
             return null;
@@ -100,7 +100,7 @@ public class TruckServiceImpl implements TruckService {
         MultiGetRequest request = EsRequestFactory.createMultiGetRequest(TRUCK_INDEX, ids, includes, excludes);
         MultiGetResponse response;
         try {
-            response = restClient.multiGet(request, RequestOptions.DEFAULT);
+            response = esClient.mget(request, RequestOptions.DEFAULT);
         } catch (IOException e) {
             log.error("IOException occured.");
             return null;
@@ -142,7 +142,7 @@ public class TruckServiceImpl implements TruckService {
 
         SearchResponse response;
         try {
-            response = restClient.search(request, RequestOptions.DEFAULT);
+            response = esClient.search(request, RequestOptions.DEFAULT);
             log.info("total hits: " + response.getHits().getTotalHits());
         } catch(IOException e) {
             log.error("IOException occured.");
@@ -158,7 +158,7 @@ public class TruckServiceImpl implements TruckService {
 
         SearchResponse response;
         try {
-            response = restClient.search(request, RequestOptions.DEFAULT);
+            response = esClient.search(request, RequestOptions.DEFAULT);
             log.info("total hits: " + response.getHits().getTotalHits());
         } catch(IOException e) {
             log.error("IOException occured.");
@@ -178,7 +178,7 @@ public class TruckServiceImpl implements TruckService {
         
         SearchResponse response;
         try {
-            response = restClient.search(request, RequestOptions.DEFAULT);
+            response = esClient.search(request, RequestOptions.DEFAULT);
             log.info("total hits: " + response.getHits().getTotalHits());
         } catch(IOException e) {
             log.error("IOException occured.");
@@ -236,7 +236,7 @@ public class TruckServiceImpl implements TruckService {
         IndexRequest request = EsRequestFactory.createIndexRequest(TRUCK_INDEX, truck.getId(), truck);
         IndexResponse response;
         try {
-            response = restClient.index(request, RequestOptions.DEFAULT);
+            response = esClient.index(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error("IOException occured.");
             return IndexUpdateResultDto.builder()
@@ -282,7 +282,7 @@ public class TruckServiceImpl implements TruckService {
         UpdateRequest request = EsRequestFactory.createUpdateWithScriptRequest(TRUCK_INDEX, truck.getId(), inline);
         UpdateResponse response;
         try {
-            response = restClient.update(request, RequestOptions.DEFAULT);
+            response = esClient.update(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error("IOException occured.");
             return IndexUpdateResultDto.builder()
@@ -302,7 +302,7 @@ public class TruckServiceImpl implements TruckService {
         DeleteResponse response;
 
         try {
-            response = restClient.delete(request, RequestOptions.DEFAULT);
+            response = esClient.delete(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error("IOException occured.");
             return DeleteResultDto.builder()
@@ -329,7 +329,7 @@ public class TruckServiceImpl implements TruckService {
         DeleteByQueryRequest request = EsRequestFactory.createDeleteByQuerydRequest(new String[]{FAVORITE_INDEX}, "truckId", truckId);
 
         try {
-            restClient.deleteByQuery(request, RequestOptions.DEFAULT);
+            esClient.deleteByQuery(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error("IOException occured.");
         }
@@ -352,7 +352,7 @@ public class TruckServiceImpl implements TruckService {
 
         UpdateResponse response;
         try {
-            response = restClient.update(request, RequestOptions.DEFAULT);
+            response = esClient.update(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error("IOException occured.");
             return IndexUpdateResultDto.builder()
@@ -377,7 +377,7 @@ public class TruckServiceImpl implements TruckService {
         
         UpdateResponse response;
         try {
-            response = restClient.update(request, RequestOptions.DEFAULT);
+            response = esClient.update(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error("IOException occured.");
             return IndexUpdateResultDto.builder()
