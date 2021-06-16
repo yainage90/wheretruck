@@ -7,7 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.UUID;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.gamakdragons.wheretruck.common.UpdateResultDto;
+import com.gamakdragons.wheretruck.common.IndexUpdateResultDto;
 import com.gamakdragons.wheretruck.domain.user.dto.Role;
 import com.gamakdragons.wheretruck.domain.user.entity.User;
 import com.gamakdragons.wheretruck.domain.user.service.UserService;
@@ -64,7 +64,7 @@ public class UserControllerTest {
 	@Test
 	void testUpdateNickName() throws Exception {
 
-		UpdateResultDto result = UpdateResultDto.builder().result("UPDATED").build();
+		IndexUpdateResultDto result = IndexUpdateResultDto.builder().result("UPDATED").build();
 
 		String userId = UUID.randomUUID().toString();
 		String nickName = UUID.randomUUID().toString().substring(0, 6);
@@ -88,7 +88,7 @@ public class UserControllerTest {
 	@Test
 	void testUpdateRole() throws Exception {
 
-		UpdateResultDto result = UpdateResultDto.builder().result("UPDATED").build();
+		IndexUpdateResultDto result = IndexUpdateResultDto.builder().result("UPDATED").build();
 
 		String userId = UUID.randomUUID().toString();
 		Role role = Role.USER;

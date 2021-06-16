@@ -28,7 +28,6 @@ import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.gamakdragons.wheretruck.TestIndexUtil;
 import com.gamakdragons.wheretruck.cloud.aws.service.S3ServiceImpl;
 import com.gamakdragons.wheretruck.common.IndexUpdateResultDto;
-import com.gamakdragons.wheretruck.common.UpdateResultDto;
 import com.gamakdragons.wheretruck.config.S3Config;
 import com.gamakdragons.wheretruck.domain.food.dto.FoodSaveRequestDto;
 import com.gamakdragons.wheretruck.domain.food.entity.Food;
@@ -113,7 +112,7 @@ public class FoodServiceImplPlatformTest {
         List<FoodSaveRequestDto> foodSaveRequestDtos = createTestFoodSaveRequestDto();
 
         foodSaveRequestDtos.stream().forEach(foodSaveRequestDto -> {
-            UpdateResultDto indexResult = foodService.saveFood(truckIds.get(0), foodSaveRequestDto);
+            IndexUpdateResultDto indexResult = foodService.saveFood(truckIds.get(0), foodSaveRequestDto);
             assertThat(indexResult.getResult(), is("UPDATED"));
 
             try {
@@ -153,7 +152,7 @@ public class FoodServiceImplPlatformTest {
             foodSaveRequestDto.setDescription(descriptionToUpdate);
             foodSaveRequestDto.setImage(imageToUpdate);
 
-            UpdateResultDto updateResult = foodService.saveFood(truckIds.get(0), foodSaveRequestDto);
+            IndexUpdateResultDto updateResult = foodService.saveFood(truckIds.get(0), foodSaveRequestDto);
             assertThat(updateResult.getResult(), is("UPDATED"));
             
             try {
@@ -198,7 +197,7 @@ public class FoodServiceImplPlatformTest {
 
         List<Food> foods = truckService.getById(truckIds.get(0)).getFoods();
         foods.forEach(food -> {
-            UpdateResultDto deleteResult = foodService.deleteFood(truckIds.get(0), food.getId());
+            IndexUpdateResultDto deleteResult = foodService.deleteFood(truckIds.get(0), food.getId());
             assertThat("푸드 엔티티 삭제", deleteResult.getResult(), is("UPDATED"));
             assertThat("푸드 이미지 삭제", s3Client.doesObjectExist(FOOD_IMAGE_BUCKET, truckIds.get(0) + "/" + food.getId()), is(false));
         });
@@ -227,7 +226,7 @@ public class FoodServiceImplPlatformTest {
             foodSaveRequestDto.setDescription("this is food" + i);
             foodSaveRequestDto.setImage(null);
 
-            UpdateResultDto updateResultDto = foodService.saveFood(truckIds.get(0), foodSaveRequestDto);
+            IndexUpdateResultDto updateResultDto = foodService.saveFood(truckIds.get(0), foodSaveRequestDto);
             createdIds.add(updateResultDto.getId());
         }
 
@@ -326,7 +325,7 @@ public class FoodServiceImplPlatformTest {
     private void indexTestFoodData(String truckId, List<FoodSaveRequestDto> foodSaveRequestDtos) {
 
         foodSaveRequestDtos.forEach(foodSaveRequestDto -> {
-            UpdateResultDto updateResult = foodService.saveFood(truckId, foodSaveRequestDto);
+            IndexUpdateResultDto updateResult = foodService.saveFood(truckId, foodSaveRequestDto);
             log.info("food index result: " + updateResult.getResult() + ", food id: " + foodSaveRequestDto.getId());
             assertThat(updateResult.getResult(), is("UPDATED"));
         });

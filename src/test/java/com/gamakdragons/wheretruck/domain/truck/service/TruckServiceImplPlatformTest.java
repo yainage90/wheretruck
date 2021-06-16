@@ -37,7 +37,6 @@ import com.gamakdragons.wheretruck.common.DeleteResultDto;
 import com.gamakdragons.wheretruck.common.GeoLocation;
 import com.gamakdragons.wheretruck.common.IndexUpdateResultDto;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
-import com.gamakdragons.wheretruck.common.UpdateResultDto;
 import com.gamakdragons.wheretruck.config.S3Config;
 import com.gamakdragons.wheretruck.domain.favorite.entity.Favorite;
 import com.gamakdragons.wheretruck.domain.favorite.service.FavoriteService;
@@ -358,7 +357,7 @@ public class TruckServiceImplPlatformTest {
         MockMultipartFile image = new MockMultipartFile("image", null, MediaType.MULTIPART_FORM_DATA_VALUE, imageBinary);
         foodSaveRequestDto.setImage(image);
         
-        UpdateResultDto updateResultDto = foodService.saveFood(truckId, foodSaveRequestDto);
+        IndexUpdateResultDto updateResultDto = foodService.saveFood(truckId, foodSaveRequestDto);
         String foodId = updateResultDto.getId();
 
         assertThat(updateResultDto.getResult(), is("UPDATED"));
@@ -520,7 +519,7 @@ public class TruckServiceImplPlatformTest {
     private void indexTestRatingData(String truckId, List<Rating> ratings) {
 
         ratings.forEach(rating-> {
-            UpdateResultDto updateResult = ratingService.saveRating(truckId, rating);
+            IndexUpdateResultDto updateResult = ratingService.saveRating(truckId, rating);
             log.info("rating index result: " + updateResult.getResult());
             assertThat(updateResult.getResult(), is("UPDATED"));
 

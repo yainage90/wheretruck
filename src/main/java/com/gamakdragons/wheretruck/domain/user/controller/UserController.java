@@ -2,7 +2,7 @@ package com.gamakdragons.wheretruck.domain.user.controller;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.gamakdragons.wheretruck.common.UpdateResultDto;
+import com.gamakdragons.wheretruck.common.IndexUpdateResultDto;
 import com.gamakdragons.wheretruck.domain.user.entity.User;
 import com.gamakdragons.wheretruck.domain.user.service.UserService;
 
@@ -35,7 +35,7 @@ public class UserController {
     }
 
     @PutMapping("/nickname")
-    public ResponseEntity<UpdateResultDto> updateNickName(@RequestBody User user, HttpServletRequest request) {
+    public ResponseEntity<IndexUpdateResultDto> updateNickName(@RequestBody User user, HttpServletRequest request) {
 
         String userId = request.getAttribute("userId").toString();
 
@@ -45,7 +45,7 @@ public class UserController {
     }
 
     @PutMapping("/role")
-    public ResponseEntity<UpdateResultDto> updateRole(@RequestBody User user, HttpServletRequest request) {
+    public ResponseEntity<IndexUpdateResultDto> updateRole(@RequestBody User user, HttpServletRequest request) {
 
         String userId = request.getAttribute("userId").toString();
 

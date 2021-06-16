@@ -12,7 +12,7 @@ import java.util.UUID;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
-import com.gamakdragons.wheretruck.common.UpdateResultDto;
+import com.gamakdragons.wheretruck.common.IndexUpdateResultDto;
 import com.gamakdragons.wheretruck.domain.rating.dto.MyRatingDto;
 import com.gamakdragons.wheretruck.domain.rating.entity.Rating;
 import com.gamakdragons.wheretruck.domain.rating.service.RatingService;
@@ -46,7 +46,7 @@ public class RatingControllerTest {
 	@Test
 	void testDelete() throws Exception {
 
-		UpdateResultDto result = UpdateResultDto.builder().result("UPDATED").build();
+		IndexUpdateResultDto result = IndexUpdateResultDto.builder().result("UPDATED").build();
 
 		String truckId = UUID.randomUUID().toString();
 		String ratingId = UUID.randomUUID().toString();
@@ -109,7 +109,7 @@ public class RatingControllerTest {
 		rating.setComment("맛있어요");
 		rating.setUserId(userId);
 
-		UpdateResultDto result = UpdateResultDto.builder()
+		IndexUpdateResultDto result = IndexUpdateResultDto.builder()
 											.id(UUID.randomUUID().toString())
 											.result("UPDATED")
 											.build();
@@ -140,7 +140,7 @@ public class RatingControllerTest {
 		rating.setComment("맛있어요");
 		rating.setUserId(userId);
 
-		UpdateResultDto result = UpdateResultDto.builder()
+		IndexUpdateResultDto result = IndexUpdateResultDto.builder()
 											.id(UUID.randomUUID().toString())
 											.result("UPDATED")
 											.build();
