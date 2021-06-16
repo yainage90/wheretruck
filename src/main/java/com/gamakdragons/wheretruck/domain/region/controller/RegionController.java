@@ -32,10 +32,10 @@ public class RegionController {
     }
 
     @GetMapping("/geo")
-    public ResponseEntity<SearchResultDto<Region>> getRegionsByDistance(GeoLocation location, float distance) {
-        log.info("/region/geo. geoLocation=" + location + ", distance=" + distance);
+    public ResponseEntity<SearchResultDto<Region>> getRegionsByDistance(GeoLocation geoLocation, float distance) {
+        log.info("/region/geo. geoLocation=" + geoLocation + ", distance=" + distance);
 
-        return new ResponseEntity<>(service.findByLocation(location, distance), HttpStatus.OK);
+        return new ResponseEntity<>(service.findByLocation(geoLocation, distance), HttpStatus.OK);
     }
 
     @GetMapping("/address")

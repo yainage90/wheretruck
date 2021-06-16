@@ -58,10 +58,10 @@ public class TruckController {
     }
 
     @GetMapping("/geo")
-    public ResponseEntity<SearchResultDto<Truck>> getByGeoLocation(GeoLocation location, float distance) {
-        log.info("/truck/geo. geoLocation=" + location + ", distance=" + distance);
+    public ResponseEntity<SearchResultDto<Truck>> getByGeoLocation(GeoLocation geoLocation, float distance) {
+        log.info("/truck/geo. geoLocation=" + geoLocation + ", distance=" + distance);
 
-        return new ResponseEntity<>(truckService.findByGeoLocation(location, distance), HttpStatus.OK);
+        return new ResponseEntity<>(truckService.findByGeoLocation(geoLocation, distance), HttpStatus.OK);
     }
 
     @GetMapping("/my")
