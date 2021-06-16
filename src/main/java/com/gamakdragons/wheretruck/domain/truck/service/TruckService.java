@@ -22,6 +22,6 @@ public interface TruckService {
     IndexUpdateResultDto updateTruck(TruckSaveRequestDto truckSaveRequestDto);
     DeleteResultDto deleteTruck(String id);
 
-    IndexUpdateResultDto openTruck(String id, GeoLocation location);
+    IndexUpdateResultDto openTruck(String id, GeoLocation geoLocation);
     IndexUpdateResultDto stopTruck(String id);
 }
