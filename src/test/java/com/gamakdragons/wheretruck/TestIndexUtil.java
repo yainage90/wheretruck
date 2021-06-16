@@ -35,9 +35,6 @@ public class TestIndexUtil {
     private static String TEST_FAVORITE_INDEX;
     private static String TEST_USER_INDEX;
 
-    private static String ES_USER;
-    private static String ES_PASSWORD;
-
     private static RestHighLevelClient esClient;
 
 	@Value("${elasticsearch.index.region.name}")
@@ -60,16 +57,6 @@ public class TestIndexUtil {
 		TEST_USER_INDEX = value;
 	}
 
-    @Value("${elasticsearch.username}")
-	public void injectEsUser(String value) {
-		ES_USER = value;
-	}
-
-    @Value("${elasticsearch.password}")
-	public void injectEsPassword(String value) {
-		ES_PASSWORD = value;
-	}
-
     private static ElasticsearchContainer elasticsearchContainer;
 
     public static void createElasticSearchTestContainer() {
@@ -90,7 +77,7 @@ public class TestIndexUtil {
 	public static void initRestHighLevelClient() {
 
         CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-        credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(ES_USER, ES_PASSWORD));
+        credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials("elastic", "test"));
 
         RestClientBuilder builder = RestClient.builder(
             HttpHost.create(elasticsearchContainer.getHttpHostAddress())
