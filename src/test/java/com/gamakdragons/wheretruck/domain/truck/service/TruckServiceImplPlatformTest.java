@@ -165,7 +165,6 @@ public class TruckServiceImplPlatformTest {
         List<TruckSaveRequestDto> dtos = createTestTruckSaveRequestDtos();
         List<String> truckIds = indexTestTruckData(dtos);
 
-
         GeoLocation geo1 = new GeoLocation(30.0f, 130.0f);
         truckService.openTruck(truckIds.get(0), geo1);
         GeoLocation geo2 = new GeoLocation(40.0f, 140.0f);
@@ -230,6 +229,12 @@ public class TruckServiceImplPlatformTest {
         List<TruckSaveRequestDto> dtos = createTestTruckSaveRequestDtos();
         List<String> truckIds = indexTestTruckData(dtos);
 
+        try {
+            Thread.sleep(2000);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
+
         Truck truck = truckService.getById(truckIds.get(0));
         log.info(truck.toString());
 
@@ -237,6 +242,37 @@ public class TruckServiceImplPlatformTest {
         assertThat(truck.getName(), is(dtos.get(0).getName()));
         assertThat(truck.getDescription(), is(dtos.get(0).getDescription()));
         assertThat(truck.getImageUrl(), not(nullValue()));
+    }
+
+    @Test
+    void testGetByIds() {
+
+        List<TruckSaveRequestDto> dtos = createTestTruckSaveRequestDtos();
+        List<String> truckIds = indexTestTruckData(dtos);
+
+        try {
+            Thread.sleep(2000);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        SearchResultDto<Truck> result = truckService.getByIds(truckIds);
+
+        assertThat(result.getNumFound(), is(truckIds.size()));
+
+        dtos.forEach(dto -> {
+		    assertThat(result.getDocs(), hasItem(allOf(
+                hasProperty("id", is(not(nullValue()))),
+                hasProperty("name", is(dto.getName())),
+                hasProperty("numRating", is(not(nullValue()))),
+                hasProperty("starAvg", is(not(nullValue()))),
+                hasProperty("geoLocation", is(nullValue())),
+                hasProperty("description", is(nullValue())),
+                hasProperty("userId", is(nullValue())),
+                hasProperty("foods", is(nullValue())),
+                hasProperty("ratings", is(nullValue()))
+            )));
+        });
     }
 
     @Test
