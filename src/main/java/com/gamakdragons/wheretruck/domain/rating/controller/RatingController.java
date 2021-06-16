@@ -3,7 +3,7 @@ package com.gamakdragons.wheretruck.domain.rating.controller;
 import javax.servlet.http.HttpServletRequest;
 
 import com.gamakdragons.wheretruck.common.SearchResultDto;
-import com.gamakdragons.wheretruck.common.UpdateResultDto;
+import com.gamakdragons.wheretruck.common.IndexUpdateResultDto;
 import com.gamakdragons.wheretruck.domain.rating.dto.MyRatingDto;
 import com.gamakdragons.wheretruck.domain.rating.entity.Rating;
 import com.gamakdragons.wheretruck.domain.rating.service.RatingService;
@@ -31,7 +31,7 @@ public class RatingController {
 
 
     @RequestMapping(value = "/{truckId}", method = {RequestMethod.POST, RequestMethod.PUT})
-    public ResponseEntity<UpdateResultDto> save(@PathVariable String truckId, @RequestBody Rating rating, HttpServletRequest httpServletRequest) {
+    public ResponseEntity<IndexUpdateResultDto> save(@PathVariable String truckId, @RequestBody Rating rating, HttpServletRequest httpServletRequest) {
         log.info("/api/rating/" + truckId + ". rating=" + rating);
 
         rating.setUserId(httpServletRequest.getAttribute("userId").toString());
@@ -40,7 +40,7 @@ public class RatingController {
     }
 
     @DeleteMapping("/{truckId}/{id}")
-    public ResponseEntity<UpdateResultDto> delete(@PathVariable String truckId, @PathVariable String id) {
+    public ResponseEntity<IndexUpdateResultDto> delete(@PathVariable String truckId, @PathVariable String id) {
         log.info("/api/rating/" + truckId + "/" + id);
 
         return new ResponseEntity<>(service.deleteRating(truckId, id), HttpStatus.OK);

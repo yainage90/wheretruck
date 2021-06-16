@@ -8,7 +8,7 @@ import java.util.UUID;
 
 import com.gamakdragons.wheretruck.cloud.aws.exception.S3ServiceException;
 import com.gamakdragons.wheretruck.cloud.aws.service.S3Service;
-import com.gamakdragons.wheretruck.common.UpdateResultDto;
+import com.gamakdragons.wheretruck.common.IndexUpdateResultDto;
 import com.gamakdragons.wheretruck.domain.food.dto.FoodSaveRequestDto;
 import com.gamakdragons.wheretruck.domain.food.entity.Food;
 import com.gamakdragons.wheretruck.util.EsRequestFactory;
@@ -45,7 +45,7 @@ public class FoodServiceImpl implements FoodService {
     }
 
     @Override
-    public UpdateResultDto saveFood(String truckId, FoodSaveRequestDto foodSaveRequestDto) {
+    public IndexUpdateResultDto saveFood(String truckId, FoodSaveRequestDto foodSaveRequestDto) {
 
         Food food = foodSaveRequestDto.toEntity();
 
@@ -86,20 +86,20 @@ public class FoodServiceImpl implements FoodService {
             response = esClient.update(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error("IOException occured.");
-            return UpdateResultDto.builder()
+            return IndexUpdateResultDto.builder()
                 .result(e.getLocalizedMessage())
                 .build();
 
         }
 
-        return UpdateResultDto.builder()
+        return IndexUpdateResultDto.builder()
                 .result(response.getResult().name())
                 .id(food.getId())
                 .build();
     }
 
     @Override
-    public UpdateResultDto deleteFood(String truckId, String id) {
+    public IndexUpdateResultDto deleteFood(String truckId, String id) {
 
         Map<String, Object> params = new HashMap<>();
         params.put("id", id);
@@ -114,7 +114,7 @@ public class FoodServiceImpl implements FoodService {
             response = esClient.update(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error("IOException occured.");
-            return UpdateResultDto.builder()
+            return IndexUpdateResultDto.builder()
                     .result(e.getLocalizedMessage())
                     .build();
         }
@@ -125,14 +125,14 @@ public class FoodServiceImpl implements FoodService {
             log.error(e.getMessage());
         }
 
-        return UpdateResultDto.builder()
+        return IndexUpdateResultDto.builder()
                 .result(response.getResult().name())
                 .build();
        
     }
 
     @Override
-    public UpdateResultDto sortFoods(String truckId, List<String> ids) {
+    public IndexUpdateResultDto sortFoods(String truckId, List<String> ids) {
         Map<String, Object> params = new HashMap<>();
         params.put("ids", ids);
 
@@ -151,12 +151,12 @@ public class FoodServiceImpl implements FoodService {
             response = esClient.update(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error("IOException occured.");
-            return UpdateResultDto.builder()
+            return IndexUpdateResultDto.builder()
                     .result(e.getLocalizedMessage())
                     .build();
         }
 
-        return UpdateResultDto.builder()
+        return IndexUpdateResultDto.builder()
                 .result(response.getResult().name())
                 .build();
     };

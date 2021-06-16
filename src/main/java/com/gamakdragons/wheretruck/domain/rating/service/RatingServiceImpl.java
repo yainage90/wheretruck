@@ -13,7 +13,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import com.gamakdragons.wheretruck.common.SearchResultDto;
-import com.gamakdragons.wheretruck.common.UpdateResultDto;
+import com.gamakdragons.wheretruck.common.IndexUpdateResultDto;
 import com.gamakdragons.wheretruck.domain.rating.dto.MyRatingDto;
 import com.gamakdragons.wheretruck.domain.rating.entity.Rating;
 import com.gamakdragons.wheretruck.util.EsRequestFactory;
@@ -45,7 +45,7 @@ public class RatingServiceImpl implements RatingService {
     private final RestHighLevelClient esClient;
 
     @Override
-    public UpdateResultDto saveRating(String truckId, Rating rating) {
+    public IndexUpdateResultDto saveRating(String truckId, Rating rating) {
 
 
         String current = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
@@ -82,20 +82,20 @@ public class RatingServiceImpl implements RatingService {
             response = esClient.update(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error("IOException occured.");
-            return UpdateResultDto.builder()
+            return IndexUpdateResultDto.builder()
                 .result(e.getLocalizedMessage())
                 .build();
 
         }
 
-        return UpdateResultDto.builder()
+        return IndexUpdateResultDto.builder()
                 .result(response.getResult().name())
                 .id(rating.getId())
                 .build();
     }
 
     @Override
-    public UpdateResultDto deleteRating(String truckId, String id) {
+    public IndexUpdateResultDto deleteRating(String truckId, String id) {
         
         Map<String, Object> params = new HashMap<>();
         params.put("id", id);
@@ -112,12 +112,12 @@ public class RatingServiceImpl implements RatingService {
             response = esClient.update(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error("IOException occured.");
-            return UpdateResultDto.builder()
+            return IndexUpdateResultDto.builder()
                     .result(e.getLocalizedMessage())
                     .build();
         }
 
-        return UpdateResultDto.builder()
+        return IndexUpdateResultDto.builder()
                 .result(response.getResult().name())
                 .build();
     }

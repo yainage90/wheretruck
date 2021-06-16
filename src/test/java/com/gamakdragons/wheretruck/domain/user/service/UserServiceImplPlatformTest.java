@@ -11,7 +11,6 @@ import java.util.UUID;
 import com.gamakdragons.wheretruck.TestIndexUtil;
 import com.gamakdragons.wheretruck.common.DeleteResultDto;
 import com.gamakdragons.wheretruck.common.IndexUpdateResultDto;
-import com.gamakdragons.wheretruck.common.UpdateResultDto;
 import com.gamakdragons.wheretruck.domain.favorite.entity.Favorite;
 import com.gamakdragons.wheretruck.domain.favorite.service.FavoriteService;
 import com.gamakdragons.wheretruck.domain.favorite.service.FavoriteServiceImpl;
@@ -108,7 +107,7 @@ public class UserServiceImplPlatformTest {
         String nickNameToUpdate = "updated " + user.getNickName();
         user.setNickName(nickNameToUpdate);
 
-        UpdateResultDto updateResult = userService.changeNickName(user.getId(), nickNameToUpdate);
+        IndexUpdateResultDto updateResult = userService.changeNickName(user.getId(), nickNameToUpdate);
         try {
             Thread.sleep(2000);
         } catch(InterruptedException e) {
@@ -132,7 +131,7 @@ public class UserServiceImplPlatformTest {
         User user = createTestUserData();
         indexTestUserData(user);
 
-        UpdateResultDto updateResult = userService.changeRole(user.getId(), Role.USER);
+        IndexUpdateResultDto updateResult = userService.changeRole(user.getId(), Role.USER);
         try {
             Thread.sleep(2000);
         } catch(InterruptedException e) {

@@ -10,7 +10,7 @@ import java.util.Random;
 import java.util.UUID;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.gamakdragons.wheretruck.common.UpdateResultDto;
+import com.gamakdragons.wheretruck.common.IndexUpdateResultDto;
 import com.gamakdragons.wheretruck.domain.food.dto.FoodSaveRequestDto;
 import com.gamakdragons.wheretruck.domain.food.service.FoodService;
 
@@ -44,7 +44,7 @@ public class FoodControllerTest {
 	@Test
 	void testDelete() throws Exception {
 
-		UpdateResultDto result = UpdateResultDto.builder().result("UPDATED").build();
+		IndexUpdateResultDto result = IndexUpdateResultDto.builder().result("UPDATED").build();
 
 		String truckId = UUID.randomUUID().toString();
 		String foodId = UUID.randomUUID().toString();
@@ -75,7 +75,7 @@ public class FoodControllerTest {
 		foodSaveRequestDto.setDescription("맛있어요");
 		foodSaveRequestDto.setImage(image);
 
-		UpdateResultDto result = UpdateResultDto.builder().result("UPDATED").id(foodId).build();
+		IndexUpdateResultDto result = IndexUpdateResultDto.builder().result("UPDATED").id(foodId).build();
 
 		given(foodService.saveFood(truckId, foodSaveRequestDto)).willReturn(result);
 
@@ -101,7 +101,7 @@ public class FoodControllerTest {
 			ids.add(UUID.randomUUID().toString());
 		}
 
-		UpdateResultDto result = UpdateResultDto.builder().result("UPDATED").build();
+		IndexUpdateResultDto result = IndexUpdateResultDto.builder().result("UPDATED").build();
 
 		given(foodService.sortFoods(truckId, ids)).willReturn(result);
 

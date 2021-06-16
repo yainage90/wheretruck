@@ -6,7 +6,6 @@ import java.util.Map;
 
 import com.gamakdragons.wheretruck.common.DeleteResultDto;
 import com.gamakdragons.wheretruck.common.IndexUpdateResultDto;
-import com.gamakdragons.wheretruck.common.UpdateResultDto;
 import com.gamakdragons.wheretruck.domain.user.dto.Role;
 import com.gamakdragons.wheretruck.domain.user.entity.User;
 import com.gamakdragons.wheretruck.util.EsRequestFactory;
@@ -82,7 +81,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UpdateResultDto changeNickName(String userId, String nickName) {
+    public IndexUpdateResultDto changeNickName(String userId, String nickName) {
 
         Map<String, Object> params = new HashMap<>();
         params.put("id", userId);
@@ -97,19 +96,19 @@ public class UserServiceImpl implements UserService {
             response = esClient.update(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error("IOException occured.");
-            return UpdateResultDto.builder()
+            return IndexUpdateResultDto.builder()
                 .result(e.getLocalizedMessage())
                 .build();
         }
 
-        return UpdateResultDto.builder()
+        return IndexUpdateResultDto.builder()
                 .result(response.getResult().name())
                 .build();
 
     }
 
     @Override
-    public UpdateResultDto changeRole(String userId, Role role) {
+    public IndexUpdateResultDto changeRole(String userId, Role role) {
 
         Map<String, Object> params = new HashMap<>();
         params.put("id", userId);
@@ -124,12 +123,12 @@ public class UserServiceImpl implements UserService {
             response = esClient.update(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error("IOException occured.");
-            return UpdateResultDto.builder()
+            return IndexUpdateResultDto.builder()
                 .result(e.getLocalizedMessage())
                 .build();
         }
 
-        return UpdateResultDto.builder()
+        return IndexUpdateResultDto.builder()
                 .result(response.getResult().name())
                 .build();
 

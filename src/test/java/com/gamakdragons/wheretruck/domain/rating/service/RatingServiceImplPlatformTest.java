@@ -19,7 +19,6 @@ import java.util.stream.Collectors;
 import com.gamakdragons.wheretruck.TestIndexUtil;
 import com.gamakdragons.wheretruck.cloud.aws.service.S3ServiceImpl;
 import com.gamakdragons.wheretruck.common.IndexUpdateResultDto;
-import com.gamakdragons.wheretruck.common.UpdateResultDto;
 import com.gamakdragons.wheretruck.config.S3Config;
 import com.gamakdragons.wheretruck.domain.rating.dto.MyRatingDto;
 import com.gamakdragons.wheretruck.domain.rating.entity.Rating;
@@ -87,7 +86,7 @@ public class RatingServiceImplPlatformTest {
         List<Rating> ratings = createTestRatingData();
 
         ratings.forEach(rating -> {
-            UpdateResultDto indexResult = ratingService.saveRating(truckIds.get(0), rating);
+            IndexUpdateResultDto indexResult = ratingService.saveRating(truckIds.get(0), rating);
             assertThat(indexResult.getResult(), is("UPDATED"));
             assertThat(indexResult.getId(), is(rating.getId()));
         });
@@ -127,7 +126,7 @@ public class RatingServiceImplPlatformTest {
         String commentToUpdate = "정말 재밌어요ㅋㅋ";
         ratings.get(0).setStar(starToUpdate);
         ratings.get(0).setComment(commentToUpdate);
-        UpdateResultDto updateResult = ratingService.saveRating(truckIds.get(0), ratings.get(0));
+        IndexUpdateResultDto updateResult = ratingService.saveRating(truckIds.get(0), ratings.get(0));
 
         assertThat(updateResult.getResult(), is("UPDATED"));
 
@@ -157,7 +156,7 @@ public class RatingServiceImplPlatformTest {
             e.printStackTrace();
         }
 
-        UpdateResultDto deleteResult = ratingService.deleteRating(truckIds.get(0), ratings.get(0).getId());
+        IndexUpdateResultDto deleteResult = ratingService.deleteRating(truckIds.get(0), ratings.get(0).getId());
         assertThat(deleteResult.getResult(), is("UPDATED"));
 
         try {
@@ -270,7 +269,7 @@ public class RatingServiceImplPlatformTest {
     private void indexTestRatingData(String truckId, List<Rating> ratings) {
 
         ratings.forEach(rating-> {
-            UpdateResultDto updateResult = ratingService.saveRating(truckId, rating);
+            IndexUpdateResultDto updateResult = ratingService.saveRating(truckId, rating);
             log.info("rating index result: " + updateResult.getResult());
             assertThat(updateResult.getResult(), is("UPDATED"));
 
