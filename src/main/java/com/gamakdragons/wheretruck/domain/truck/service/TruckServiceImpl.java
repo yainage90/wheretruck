@@ -94,7 +94,7 @@ public class TruckServiceImpl implements TruckService {
     @Override
     public SearchResultDto<Truck> getByIds(List<String> ids) {
 
-        String[] includes = new String[]{"id", "name", "opened", "numRating", "starAvg"};
+        String[] includes = new String[]{"id", "name", "opened", "numRating", "starAvg", "imageUrl"};
         String[] excludes = new String[]{"geoLocation", "description", "userId", "foods", "ratings"};
 
         MultiGetRequest request = EsRequestFactory.createMultiGetRequest(TRUCK_INDEX, ids, includes, excludes);
@@ -107,22 +107,7 @@ public class TruckServiceImpl implements TruckService {
         }
 
         List<Truck> trucks = Arrays.stream(response.getResponses())
-                                    .map(
-                                        item -> 
-                                            new Truck(
-                                                item.getResponse().getSource().get("id").toString(), 
-                                                item.getResponse().getSource().get("name").toString(),
-                                                null,
-                                                null,
-                                                Boolean.parseBoolean(item.getResponse().getSource().get("opened").toString()),
-                                                null,
-                                                Integer.parseInt(item.getResponse().getSource().get("numRating").toString()),
-                                                Float.parseFloat(item.getResponse().getSource().get("starAvg").toString()),
-                                                item.getResponse().getSource().get("imageUrl").toString(),
-                                                null,
-                                                null
-                                            )
-                                    )
+                                    .map(item -> new Gson().fromJson(item.getResponse().getSourceAsString(), Truck.class))
                                     .collect(Collectors.toList());
 
         return SearchResultDto.<Truck> builder()
