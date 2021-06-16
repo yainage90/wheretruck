@@ -89,13 +89,6 @@ public class TruckController {
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
 
-    /*@PutMapping
-    public ResponseEntity<UpdateResultDto> update(TruckSaveRequestDto truckSaveRequestDto) {
-        log.info("/api/truck. truckSaveRequestDto=" + truckSaveRequestDto);
-
-        return new ResponseEntity<>(truckService.updateTruck(truckSaveRequestDto), HttpStatus.OK);
-    }*/
-
     @DeleteMapping("/{id}")
     public ResponseEntity<DeleteResultDto> delete(@PathVariable String id) {
         log.info("/truck/" + id);
