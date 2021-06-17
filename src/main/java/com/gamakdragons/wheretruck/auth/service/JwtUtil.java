@@ -34,6 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 public class JwtUtil {
 
     private static String JWT_SECRET;
+
     private static int EXPIRATION_TIME;
 
     public static String generateToken(String userId) {
@@ -132,9 +133,9 @@ public class JwtUtil {
         JWT_SECRET = value;
     }
 
-    @Value("${jwt.token-validity-in-ms}")
+    @Value("${jwt.token-validity-in-days}")
     public void setExpirationTime(int value) {
-        EXPIRATION_TIME = value;
+        EXPIRATION_TIME = value * 24 * 60 * 60 * 1000;
     }
     
 }
