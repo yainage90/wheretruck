@@ -12,5 +12,5 @@ public interface FavoriteService {
 	int countByTruckId(String truckId);
 
 	IndexUpdateResultDto saveFavorite(Favorite favorite);
-	DeleteResultDto deleteFavorite(String id);
+	DeleteResultDto deleteFavorite(String truckId);
 }

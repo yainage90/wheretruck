@@ -56,10 +56,10 @@ public class FavoriteController {
         return new ResponseEntity<>(service.saveFavorite(favorite), HttpStatus.OK);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<DeleteResultDto> delete(@PathVariable String id) {
-        log.info("/api/favorite/" + id + ". id=" + id);
+    @DeleteMapping("/{truckId}")
+    public ResponseEntity<DeleteResultDto> delete(@PathVariable String truckId) {
+        log.info("/api/favorite/" + truckId + ". truckId=" + truckId);
 
-        return new ResponseEntity<>(service.deleteFavorite(id), HttpStatus.OK);
+        return new ResponseEntity<>(service.deleteFavorite(truckId), HttpStatus.OK);
     }
 }

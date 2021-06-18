@@ -15,14 +15,14 @@ import com.gamakdragons.wheretruck.domain.truck.entity.Truck;
 import com.gamakdragons.wheretruck.domain.truck.service.TruckService;
 import com.gamakdragons.wheretruck.util.EsRequestFactory;
 
-import org.elasticsearch.action.delete.DeleteRequest;
-import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.index.reindex.BulkByScrollResponse;
+import org.elasticsearch.index.reindex.DeleteByQueryRequest;
 import org.elasticsearch.rest.RestStatus;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -114,12 +114,12 @@ public class FavoriteServiceImpl implements FavoriteService {
     }
 
     @Override
-    public DeleteResultDto deleteFavorite(String id) {
+    public DeleteResultDto deleteFavorite(String truckId) {
 
-        DeleteRequest request = EsRequestFactory.createDeleteByIdRequest(FAVORITE_INDEX_NAME, id);
-        DeleteResponse response;
+        DeleteByQueryRequest request = EsRequestFactory.createDeleteByQuerydRequest(new String[]{FAVORITE_INDEX_NAME}, "truckId", truckId);
+        BulkByScrollResponse response;
         try {
-            response = esClient.delete(request, RequestOptions.DEFAULT);
+            response = esClient.deleteByQuery(request, RequestOptions.DEFAULT);
         } catch(IOException e) {
             log.error(e.getMessage());
             return DeleteResultDto.builder()
@@ -127,9 +127,14 @@ public class FavoriteServiceImpl implements FavoriteService {
                     .build();
         } 
 
-        return DeleteResultDto.builder()
-                .result(response.getResult().name())
+        if(response.getDeleted() > 0) {
+            return DeleteResultDto.builder()
+                .result("DELETED")
                 .build();
-
+        } else {
+            return DeleteResultDto.builder()
+                .result("NOOP")
+                .build();
+        }
     }
 }
