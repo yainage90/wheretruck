@@ -4,11 +4,12 @@ import com.gamakdragons.wheretruck.common.DeleteResultDto;
 import com.gamakdragons.wheretruck.common.IndexUpdateResultDto;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
 import com.gamakdragons.wheretruck.domain.favorite.entity.Favorite;
+import com.gamakdragons.wheretruck.domain.truck.entity.Truck;
 
 public interface FavoriteService {
 	
-	SearchResultDto<Favorite> findByUserId(String userId);
-	SearchResultDto<Favorite> findByTruckId(String truckId);
+	SearchResultDto<Truck> findByUserId(String userId);
+	int countByTruckId(String truckId);
 
 	IndexUpdateResultDto saveFavorite(Favorite favorite);
 	DeleteResultDto deleteFavorite(String id);

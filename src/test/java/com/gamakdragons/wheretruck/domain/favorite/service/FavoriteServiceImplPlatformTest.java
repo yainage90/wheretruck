@@ -14,6 +14,7 @@ import com.gamakdragons.wheretruck.TestIndexUtil;
 import com.gamakdragons.wheretruck.common.IndexUpdateResultDto;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
 import com.gamakdragons.wheretruck.domain.favorite.entity.Favorite;
+import com.gamakdragons.wheretruck.domain.truck.entity.Truck;
 import com.gamakdragons.wheretruck.test_config.ElasticSearchTestConfig;
 
 import org.junit.jupiter.api.AfterAll;
@@ -78,7 +79,7 @@ public class FavoriteServiceImplPlatformTest {
 	}
 
 	@Test
-	void testFindByTruckId() {
+	void testCountByTruckId() {
 
 		Favorite favorite = new Favorite();
 		String userId = UUID.randomUUID().toString();
@@ -96,8 +97,7 @@ public class FavoriteServiceImplPlatformTest {
 			e.printStackTrace();
 		}
 
-		SearchResultDto<Favorite> searchResult = favoriteService.findByTruckId(truckId);
-		assertThat(searchResult.getDocs(), hasItem(allOf(hasProperty("userId", is(userId)), hasProperty("truckId", is(truckId)))));
+		assertThat(favoriteService.countByTruckId(truckId), is(1));
 	}
 
 	@Test
@@ -119,8 +119,8 @@ public class FavoriteServiceImplPlatformTest {
 			e.printStackTrace();
 		}
 
-		SearchResultDto<Favorite> searchResult = favoriteService.findByUserId(userId);
-		assertThat(searchResult.getDocs(), hasItem(allOf(hasProperty("userId", is(userId)), hasProperty("truckId", is(truckId)))));
+		SearchResultDto<Truck> searchResult = favoriteService.findByUserId(userId);
+		assertThat(searchResult.getDocs(), hasItem(allOf(hasProperty("id", is(truckId)), hasProperty("userId", is(userId)))));
 	}
 
 	@Test

@@ -7,6 +7,7 @@ import com.gamakdragons.wheretruck.common.IndexUpdateResultDto;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
 import com.gamakdragons.wheretruck.domain.favorite.entity.Favorite;
 import com.gamakdragons.wheretruck.domain.favorite.service.FavoriteService;
+import com.gamakdragons.wheretruck.domain.truck.entity.Truck;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,7 +31,7 @@ public class FavoriteController {
 	private final FavoriteService service;
 
 	@GetMapping("/my")
-    public ResponseEntity<SearchResultDto<Favorite>> getByUserId(HttpServletRequest httpServletRequest) {
+    public ResponseEntity<SearchResultDto<Truck>> getByUserId(HttpServletRequest httpServletRequest) {
         log.info("/api/favorite/my");
 
 		String userId = httpServletRequest.getAttribute("userId").toString();
@@ -39,10 +40,10 @@ public class FavoriteController {
     }
 
     @GetMapping("/truck/{truckId}")
-    public ResponseEntity<SearchResultDto<Favorite>> getByTruckId(@PathVariable String truckId) {
+    public ResponseEntity<Integer> getByTruckId(@PathVariable String truckId) {
         log.info("/favorite/search/truckId. truckId=" + truckId);
 
-        return new ResponseEntity<>(service.findByTruckId(truckId), HttpStatus.OK);
+        return new ResponseEntity<>(service.countByTruckId(truckId), HttpStatus.OK);
     }
 
     @PostMapping

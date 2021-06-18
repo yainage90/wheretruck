@@ -9,10 +9,12 @@ import java.util.UUID;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gamakdragons.wheretruck.common.DeleteResultDto;
+import com.gamakdragons.wheretruck.common.GeoLocation;
 import com.gamakdragons.wheretruck.common.IndexUpdateResultDto;
 import com.gamakdragons.wheretruck.common.SearchResultDto;
 import com.gamakdragons.wheretruck.domain.favorite.entity.Favorite;
 import com.gamakdragons.wheretruck.domain.favorite.service.FavoriteService;
+import com.gamakdragons.wheretruck.domain.truck.entity.Truck;
 import com.google.gson.JsonObject;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -58,47 +60,43 @@ public class FavoriteControllerTest {
 	}
 
 	@Test
-	void testGetByTruckId() throws Exception {
+	void testCountByTruckId() throws Exception {
 
-		Favorite favorite = new Favorite();
 		String truckId = UUID.randomUUID().toString();
-		favorite.setTruckId(truckId);
-		favorite.setUserId(UUID.randomUUID().toString());
 
-		SearchResultDto<Favorite> result = SearchResultDto.<Favorite> builder()
-														.status("OK")
-														.numFound(1)
-														.docs(Collections.singletonList(favorite))
-														.build();
-
-		given(favoriteService.findByTruckId(truckId)).willReturn(result);
+		given(favoriteService.countByTruckId(truckId)).willReturn(3);
 
 		MockHttpServletRequestBuilder request = MockMvcRequestBuilders.get("/api/favorite/truck/" + truckId);
 			
 		mockMvc.perform(request)
 				.andExpect(status().isOk())
 				.andExpect(content().contentType("application/json"))
-				.andExpect(content().string(objectMapper.writeValueAsString(result)));
+				.andExpect(content().string("3"));
 	}
 
 	@Test
 	void testMy() throws Exception {
 
-		Favorite favorite = new Favorite();
-		String userId = UUID.randomUUID().toString();
-		favorite.setTruckId(UUID.randomUUID().toString());
-		favorite.setUserId(userId);
+		Truck truck = new Truck();
+		truck.setId(UUID.randomUUID().toString());
+		truck.setName("truckName");
+		truck.setGeoLocation(new GeoLocation(35.0f, 135.0f));
+		truck.setOpened(true);
+		truck.setNumRating(10);
+		truck.setStarAvg(4.5f);
+		truck.setUserId(UUID.randomUUID().toString());
+		truck.setImageUrl("http://foo-bar.com/abcd");
 
-		SearchResultDto<Favorite> result = SearchResultDto.<Favorite> builder()
+		SearchResultDto<Truck> result = SearchResultDto.<Truck> builder()
 														.status("OK")
 														.numFound(1)
-														.docs(Collections.singletonList(favorite))
+														.docs(Collections.singletonList(truck))
 														.build();
 
-		given(favoriteService.findByUserId(userId)).willReturn(result);
+		given(favoriteService.findByUserId(truck.getUserId())).willReturn(result);
 
 		MockHttpServletRequestBuilder request = MockMvcRequestBuilders.get("/api/favorite/my")
-																	.requestAttr("userId", userId);
+																	.requestAttr("userId", truck.getUserId());
 			
 		mockMvc.perform(request)
 				.andExpect(status().isOk())
