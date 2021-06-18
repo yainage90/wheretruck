@@ -72,7 +72,7 @@ public class TruckController {
     }
 
     @RequestMapping(method = {RequestMethod.POST, RequestMethod.PUT})
-    public ResponseEntity<IndexUpdateResultDto> save(@RequestBody TruckSaveRequestDto truckSaveRequestDto, HttpServletRequest httpServletRequest) {
+    public ResponseEntity<IndexUpdateResultDto> save(TruckSaveRequestDto truckSaveRequestDto, HttpServletRequest httpServletRequest) {
         log.info("/api/truck. truckSaveRequestDto=" + truckSaveRequestDto);
 
         truckSaveRequestDto.setUserId(httpServletRequest.getAttribute("userId").toString());
