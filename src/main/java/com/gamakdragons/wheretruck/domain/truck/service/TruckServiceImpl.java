@@ -23,6 +23,8 @@ import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.get.MultiGetRequest;
+import org.elasticsearch.action.get.MultiGetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
@@ -89,7 +91,7 @@ public class TruckServiceImpl implements TruckService {
         return truck;
     }
 
-    /*@Override
+    @Override
     public SearchResultDto<Truck> getByIds(List<String> ids) {
 
         String[] includes = new String[]{"id", "name", "opened", "numRating", "starAvg", "imageUrl"};
@@ -113,7 +115,7 @@ public class TruckServiceImpl implements TruckService {
                 .numFound(trucks.size())
                 .docs(trucks)
                 .build();
-    }*/
+    }
     
 
     @Override

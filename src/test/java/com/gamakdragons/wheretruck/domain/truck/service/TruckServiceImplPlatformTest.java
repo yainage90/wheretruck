@@ -244,7 +244,7 @@ public class TruckServiceImplPlatformTest {
         assertThat(truck.getImageUrl(), not(nullValue()));
     }
 
-    /*@Test
+    @Test
     void testGetByIds() {
 
         List<TruckSaveRequestDto> dtos = createTestTruckSaveRequestDtos();
@@ -273,7 +273,7 @@ public class TruckServiceImplPlatformTest {
                 hasProperty("ratings", is(nullValue()))
             )));
         });
-    }*/
+    }
 
     @Test
     void testGetByIdRatingsIsInCreatedDateReverseOrder() {
@@ -432,8 +432,7 @@ public class TruckServiceImplPlatformTest {
             e.printStackTrace();
         }
 
-        assertThat(favoriteService.findByTruckId(truckId).getNumFound(), is(1));
-
+        assertThat(favoriteService.countByTruckId(truckId), is(1));
         assertThat(truckService.deleteTruck(truckId).getResult(), is("DELETED"));
 
         try {
@@ -442,7 +441,7 @@ public class TruckServiceImplPlatformTest {
             e.printStackTrace();
         }
 
-        assertThat(favoriteService.findByTruckId(truckId).getNumFound(), is(0));
+        assertThat(favoriteService.countByTruckId(truckId), is(0));
     }
 
     @Test
