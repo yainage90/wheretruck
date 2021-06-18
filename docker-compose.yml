@@ -1,0 +1,21 @@
+version: "3"
+
+services:
+  wheretruck:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    expose:
+      - 8080
+    #networks: 
+    #  - wheretruck_net
+
+  nginx:
+    build:
+      context: ./nginx
+    ports: 
+      - "80:80"
+    depends_on: 
+      - wheretruck
+    #networks:
+    #  - wheretruck_net

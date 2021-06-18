@@ -244,7 +244,7 @@ public class TruckServiceImplPlatformTest {
         assertThat(truck.getImageUrl(), not(nullValue()));
     }
 
-    @Test
+    /*@Test
     void testGetByIds() {
 
         List<TruckSaveRequestDto> dtos = createTestTruckSaveRequestDtos();
@@ -273,7 +273,7 @@ public class TruckServiceImplPlatformTest {
                 hasProperty("ratings", is(nullValue()))
             )));
         });
-    }
+    }*/
 
     @Test
     void testGetByIdRatingsIsInCreatedDateReverseOrder() {

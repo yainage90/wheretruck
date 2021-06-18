@@ -14,7 +14,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gamakdragons.wheretruck.common.DeleteResultDto;
@@ -126,7 +125,7 @@ public class TruckControllerTest {
 				.andExpect(content().string(objectMapper.writeValueAsString(truck)));
 	}
 
-	@Test
+	/*@Test
 	void testGetByIds() throws Exception {
 
 		SearchResultDto<Truck> result = createTruckSearchResultDto();
@@ -138,7 +137,7 @@ public class TruckControllerTest {
 				.andExpect(status().isOk())
 				.andExpect(content().contentType("application/json"))
 				.andExpect(content().string(objectMapper.writeValueAsString(result)));
-	}
+	}*/
 
 	@Test
 	void testGetByUserId() throws Exception {
