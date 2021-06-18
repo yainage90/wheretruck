@@ -195,15 +195,13 @@ public class TruckServiceImpl implements TruckService {
 
     }
 
-    
-
     @Override
     public IndexUpdateResultDto saveTruck(TruckSaveRequestDto truckSaveRequestDto) {
 
         Truck truck = truckSaveRequestDto.toSaveEntity();
         truck.setGeoLocation(new GeoLocation(0.0f, 0.0f));
 
-        if(truckSaveRequestDto.getImage() != null) {
+        if(truckSaveRequestDto.getImage() != null && !truckSaveRequestDto.getImage().isEmpty()) {
             try {
                 String truckImageUrl = s3Service.uploadImage(TRUCK_IMAGE_BUCKET, truck.getId(), truckSaveRequestDto.getImage());
                 log.info("image uploaded to s3 bucket. url=" + truckImageUrl);
@@ -239,7 +237,7 @@ public class TruckServiceImpl implements TruckService {
 
         Truck truck = truckSaveRequestDto.toUpdateEntity();
 
-        if(truckSaveRequestDto.getImage() != null) {
+        if(truckSaveRequestDto.getImage() != null && !truckSaveRequestDto.getImage().isEmpty()) {
             String truckImageUrl = s3Service.uploadImage(TRUCK_IMAGE_BUCKET, truck.getId(), truckSaveRequestDto.getImage());
             log.info("image uploaded to s3 bucket. url=" + truckImageUrl);
             truck.setImageUrl(truckImageUrl);
@@ -247,6 +245,7 @@ public class TruckServiceImpl implements TruckService {
             if(s3Service.deleteImage(TRUCK_IMAGE_BUCKET, truck.getId())) {
                 log.info("truck image removed.");
             }
+            truck.setImageUrl(null);
         }
 
         log.info(truck.toString());
@@ -339,11 +338,13 @@ public class TruckServiceImpl implements TruckService {
         } catch(IOException e) {
             log.error("IOException occured.");
             return IndexUpdateResultDto.builder()
+                    .id(id)
                     .result(e.getLocalizedMessage())
                     .build();
         }
 
         return IndexUpdateResultDto.builder()
+                .id(id)
                 .result(response.getResult().name())
                 .build();
     }
@@ -364,11 +365,13 @@ public class TruckServiceImpl implements TruckService {
         } catch(IOException e) {
             log.error("IOException occured.");
             return IndexUpdateResultDto.builder()
+                    .id(id)
                     .result(e.getLocalizedMessage())
                     .build();
         }
 
         return IndexUpdateResultDto.builder()
+                .id(id)
                 .result(response.getResult().name())
                 .build();
     }

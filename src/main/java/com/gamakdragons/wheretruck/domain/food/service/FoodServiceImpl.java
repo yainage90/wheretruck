@@ -60,6 +60,13 @@ public class FoodServiceImpl implements FoodService {
                            "target.cost = params.food.cost;" +
                            "target.description = params.food.description;" +
                            "target.imageUrl = params.food.imageUrl;";   
+
+            if(foodSaveRequestDto.getImage() == null || foodSaveRequestDto.getImage().isEmpty()) {
+                if(s3Service.deleteImage(FOOD_IMAGE_BUCKET, truckId + "/" + food.getId())) {
+                    log.info("food image removed: " + truckId + "/" + food.getId());
+                }
+                food.setImageUrl(null);
+            }
         }
 
         if(foodSaveRequestDto.getImage() != null) {
