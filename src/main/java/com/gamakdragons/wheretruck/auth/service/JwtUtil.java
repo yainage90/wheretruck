@@ -61,16 +61,16 @@ public class JwtUtil {
             log.error("Invalid JWT signature.\n" + token, e.getMessage()); 
             throw new JwtException("Invalid JWT signature");
         } catch (MalformedJwtException e) { 
-            log.error("Invalid JWT token", e.getMessage()); 
+            log.error("Invalid JWT token\n" + token, e.getMessage()); 
             throw new JwtException("Invalid JWT token");
         } catch (ExpiredJwtException e) { 
-            log.error("JWT token is expired", e.getMessage()); 
+            log.error("JWT token is expired\n" + token, e.getMessage()); 
             throw new JwtException("JWT token is expired");
         } catch (UnsupportedJwtException e) { 
-            log.error("JWT token is unsupported", e.getMessage()); 
+            log.error("JWT token is unsupported\n" + token, e.getMessage()); 
             throw new JwtException("JWT token is unsupported");
         } catch (IllegalArgumentException e) { 
-            log.error("JWT claims string is empty", e.getMessage()); 
+            log.error("JWT claims string is empty\n" + token, e.getMessage()); 
             throw new JwtException("JWT claims string is empty");
         }
 
@@ -134,7 +134,7 @@ public class JwtUtil {
     }
 
     @Value("${jwt.token-validity-in-days}")
-    public void setExpirationTime(int value) {
+    public void setExpirationTime(long value) {
         EXPIRATION_TIME = value * 24 * 60 * 60 * 1000;
     }
     
