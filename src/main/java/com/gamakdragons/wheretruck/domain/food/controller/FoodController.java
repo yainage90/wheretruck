@@ -30,7 +30,14 @@ public class FoodController {
     public ResponseEntity<IndexUpdateResultDto> save(@PathVariable String truckId, FoodSaveRequestDto foodSaveRequestDto) {
         log.info("/api/food/" + truckId);
 
-        return new ResponseEntity<>(service.saveFood(truckId, foodSaveRequestDto), HttpStatus.OK);
+        IndexUpdateResultDto result;
+        if(foodSaveRequestDto.getId() == null) {
+            result = service.saveFood(truckId, foodSaveRequestDto);
+        } else {
+            result = service.updateFood(truckId, foodSaveRequestDto);
+        }
+
+        return new ResponseEntity<>(result, HttpStatus.OK);
     }
 
     @DeleteMapping("/{truckId}/{id}")

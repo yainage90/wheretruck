@@ -14,9 +14,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import lombok.extern.slf4j.Slf4j;
@@ -30,13 +31,22 @@ public class RatingController {
     private RatingService service;
 
 
-    @RequestMapping(value = "/{truckId}", method = {RequestMethod.POST, RequestMethod.PUT})
+    @PostMapping("/{truckId}")
     public ResponseEntity<IndexUpdateResultDto> save(@PathVariable String truckId, @RequestBody Rating rating, HttpServletRequest httpServletRequest) {
         log.info("/api/rating/" + truckId + ". rating=" + rating);
 
         rating.setUserId(httpServletRequest.getAttribute("userId").toString());
 
         return new ResponseEntity<>(service.saveRating(truckId, rating), HttpStatus.OK);
+    }
+
+    @PutMapping("/{truckId}")
+    public ResponseEntity<IndexUpdateResultDto> update(@PathVariable String truckId, @RequestBody Rating rating, HttpServletRequest httpServletRequest) {
+        log.info("/api/rating/" + truckId + ". rating=" + rating);
+
+        rating.setUserId(httpServletRequest.getAttribute("userId").toString());
+
+        return new ResponseEntity<>(service.updateRating(truckId, rating), HttpStatus.OK);
     }
 
     @DeleteMapping("/{truckId}/{id}")

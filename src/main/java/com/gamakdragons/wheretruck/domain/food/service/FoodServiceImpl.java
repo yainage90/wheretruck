@@ -49,25 +49,8 @@ public class FoodServiceImpl implements FoodService {
 
         Food food = foodSaveRequestDto.toEntity();
 
-        String script;
-        if(food.getId() == null) {
-            food.setId(UUID.randomUUID().toString());
-            script = "if(ctx._source.foods == null) {ctx._source.foods = new ArrayList();}" + 
-                        "ctx._source.foods.add(params.food);";
-        } else {
-            script = "def target = ctx._source.foods.find(food -> food.id == params.food.id);" +
-                           "target.name = params.food.name;" + 
-                           "target.cost = params.food.cost;" +
-                           "target.description = params.food.description;" +
-                           "target.imageUrl = params.food.imageUrl;";   
-
-            if(foodSaveRequestDto.getImage() == null || foodSaveRequestDto.getImage().isEmpty()) {
-                if(s3Service.deleteImage(FOOD_IMAGE_BUCKET, truckId + "/" + food.getId())) {
-                    log.info("food image removed: " + truckId + "/" + food.getId());
-                }
-                food.setImageUrl(null);
-            }
-        }
+        food.setId(UUID.randomUUID().toString());
+        
 
         if(foodSaveRequestDto.getImage() != null) {
             try {
@@ -83,6 +66,61 @@ public class FoodServiceImpl implements FoodService {
 
         Map<String, Object> params = new HashMap<>();
         params.put("food", food.toMap());
+        
+        String script = "if(ctx._source.foods == null) {ctx._source.foods = new ArrayList();}" + 
+                        "ctx._source.foods.add(params.food);";
+        Script inline = new Script(ScriptType.INLINE, "painless", script, params);
+
+        UpdateRequest request = EsRequestFactory.createUpdateWithScriptRequest(TRUCK_INDEX, truckId, inline);
+
+        UpdateResponse response;
+        try {
+            response = esClient.update(request, RequestOptions.DEFAULT);
+        } catch(IOException e) {
+            log.error("IOException occured.");
+            return IndexUpdateResultDto.builder()
+                .result(e.getLocalizedMessage())
+                .build();
+
+        }
+
+        return IndexUpdateResultDto.builder()
+                .result(response.getResult().name())
+                .id(food.getId())
+                .build();
+    }
+    
+    @Override
+    public IndexUpdateResultDto updateFood(String truckId, FoodSaveRequestDto foodSaveRequestDto) {
+
+        Food food = foodSaveRequestDto.toEntity();
+
+        if(foodSaveRequestDto.getImage() == null || foodSaveRequestDto.getImage().isEmpty()) {
+            if(s3Service.deleteImage(FOOD_IMAGE_BUCKET, truckId + "/" + food.getId())) {
+                log.info("food image removed: " + truckId + "/" + food.getId());
+            }
+            food.setImageUrl(null);
+        } else {
+
+            try {
+                String foodImageUrl = s3Service.uploadImage(FOOD_IMAGE_BUCKET, truckId + "/" + food.getId(), foodSaveRequestDto.getImage());
+                log.info("image uploaded to s3 bucket. url=" + foodImageUrl);
+                food.setImageUrl(foodImageUrl);
+            } catch(S3ServiceException e) {
+                log.error(e.getMessage());
+            }
+        }
+
+        log.info("food: " + food);
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("food", food.toMap());
+
+        String script = "def target = ctx._source.foods.find(food -> food.id == params.food.id);" +
+                           "target.name = params.food.name;" + 
+                           "target.cost = params.food.cost;" +
+                           "target.description = params.food.description;" +
+                           "target.imageUrl = params.food.imageUrl;";
         
         Script inline = new Script(ScriptType.INLINE, "painless", script, params);
 
