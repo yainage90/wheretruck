@@ -30,8 +30,8 @@ deploy:
     wait-until-deployed: true
   
   - provider: codedeploy
-    access_key_id: $$AWS_ACCESS_KEY
-    secret_access_key: $$AWS_SECRET_KEY
+    access_key_id: $AWS_ACCESS_KEY
+    secret_access_key: $AWS_SECRET_KEY
     bucket: wheretruck-build
     key: wheretruck.zip
     bundle_type: zip
