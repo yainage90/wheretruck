@@ -1,0 +1,46 @@
+language: java
+jdk:
+  - openjdk11
+
+branch:
+  only:
+    - master
+
+cache:
+  directories:
+    - '$HOME/.m2/repository'
+    - '$HOME/.gradle'
+
+script: "./gradlew clean build -x test"
+
+before_deploy:
+  - zip -r wheretruck *
+  - mkdir -p deploy
+  - mv wheretruck.zip deploy/wheretruck.zip
+
+deploy:
+  - provider: s3
+    access_key_id: $AWS_ACCESS_KEY
+    secret_access_key: $AWS_SECRET_KEY
+    bucket: wheretruck-build
+    region: ap-northeast-2
+    skip_cleanup: true
+    acl: private
+    local_dir: deploy
+    wait-until-deployed: true
+  
+  - provider: codedeploy
+    access_key_id: $$AWS_ACCESS_KEY
+    secret_access_key: $$AWS_SECRET_KEY
+    bucket: wheretruck-build
+    key: wheretruck.zip
+    bundle_type: zip
+    application: wheretruck
+    deployment_group: wheretruck-group
+    region: ap-northeast-2
+    wait-until-deployed: true
+
+notifications:
+  email:
+    recipients:
+      - "yaincoding@gmail.com"
