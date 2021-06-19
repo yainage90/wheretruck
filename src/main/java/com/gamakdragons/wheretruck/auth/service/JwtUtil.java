@@ -35,7 +35,7 @@ public class JwtUtil {
 
     private static String JWT_SECRET;
 
-    private static int EXPIRATION_TIME;
+    private static long EXPIRATION_TIME;
 
     public static String generateToken(String userId) {
 
@@ -58,7 +58,7 @@ public class JwtUtil {
                         .parseClaimsJws(token).getBody().getSubject();
 
         } catch (SignatureException e) { 
-            log.error("Invalid JWT signature", e.getMessage()); 
+            log.error("Invalid JWT signature.\n" + token, e.getMessage()); 
             throw new JwtException("Invalid JWT signature");
         } catch (MalformedJwtException e) { 
             log.error("Invalid JWT token", e.getMessage()); 
