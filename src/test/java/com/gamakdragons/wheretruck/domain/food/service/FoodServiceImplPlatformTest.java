@@ -152,7 +152,7 @@ public class FoodServiceImplPlatformTest {
             foodSaveRequestDto.setDescription(descriptionToUpdate);
             foodSaveRequestDto.setImage(imageToUpdate);
 
-            IndexUpdateResultDto updateResult = foodService.saveFood(truckIds.get(0), foodSaveRequestDto);
+            IndexUpdateResultDto updateResult = foodService.updateFood(truckIds.get(0), foodSaveRequestDto);
             assertThat(updateResult.getResult(), is("UPDATED"));
             
             try {

@@ -108,7 +108,7 @@ public class RatingServiceImplPlatformTest {
     }
 
     @Test
-    void testUpdateRatingUpdateTruckStarAvg() {
+    void testUpdateRatingChangeTruckStarAvg() {
 
         List<TruckSaveRequestDto> trucks = createTestTruckData();
         List<String> truckIds = indexTestTruckData(trucks);
@@ -122,11 +122,12 @@ public class RatingServiceImplPlatformTest {
             e.printStackTrace();
         }
 
+
         float starToUpdate = ratings.get(0).getStar() + 1.0f;
         String commentToUpdate = "정말 재밌어요ㅋㅋ";
         ratings.get(0).setStar(starToUpdate);
         ratings.get(0).setComment(commentToUpdate);
-        IndexUpdateResultDto updateResult = ratingService.saveRating(truckIds.get(0), ratings.get(0));
+        IndexUpdateResultDto updateResult = ratingService.updateRating(truckIds.get(0), ratings.get(0));
 
         assertThat(updateResult.getResult(), is("UPDATED"));
 

@@ -141,11 +141,11 @@ public class RatingControllerTest {
 		rating.setUserId(userId);
 
 		IndexUpdateResultDto result = IndexUpdateResultDto.builder()
-											.id(UUID.randomUUID().toString())
+											.id(ratingId)
 											.result("UPDATED")
 											.build();
 
-		given(ratingService.saveRating(truckId, rating)).willReturn(result);
+		given(ratingService.updateRating(truckId, rating)).willReturn(result);
 
 		MockHttpServletRequestBuilder request = MockMvcRequestBuilders.put("/api/rating/" + truckId)
 														.contentType(MediaType.APPLICATION_JSON)

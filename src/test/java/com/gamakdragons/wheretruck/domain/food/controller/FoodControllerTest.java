@@ -93,6 +93,41 @@ public class FoodControllerTest {
 	}
 
 	@Test
+	void testUpdate() throws Exception {
+		
+		String truckId = UUID.randomUUID().toString();
+		String foodId = UUID.randomUUID().toString();
+
+		byte[] imageBinary = new byte[128];
+        new Random().nextBytes(imageBinary);
+        MockMultipartFile image = new MockMultipartFile("image", "foodImage.png", MediaType.MULTIPART_FORM_DATA_VALUE, imageBinary);
+
+		FoodSaveRequestDto foodSaveRequestDto = new FoodSaveRequestDto();
+		foodSaveRequestDto.setId(foodId);
+		foodSaveRequestDto.setName("팥빵");
+		foodSaveRequestDto.setCost(1000);
+		foodSaveRequestDto.setDescription("맛있어요");
+		foodSaveRequestDto.setImage(image);
+
+		IndexUpdateResultDto result = IndexUpdateResultDto.builder().result("UPDATED").id(foodId).build();
+
+		given(foodService.updateFood(truckId, foodSaveRequestDto)).willReturn(result);
+
+		MockHttpServletRequestBuilder request = MockMvcRequestBuilders.multipart("/api/food/" + truckId)
+																	.file(image)
+																	.contentType(MediaType.MULTIPART_FORM_DATA_VALUE)
+																	.param("id", foodId)
+																	.param("name", foodSaveRequestDto.getName())
+																	.param("cost", String.valueOf(foodSaveRequestDto.getCost()))
+																	.param("description", foodSaveRequestDto.getDescription());
+
+		mockMvc.perform(request)
+				.andExpect(status().isOk())
+				.andExpect(content().contentType("application/json"))
+				.andExpect(content().string(objectMapper.writeValueAsString(result)));
+	}
+
+	@Test
 	void testSort() throws Exception {
 
 		String truckId = UUID.randomUUID().toString();
