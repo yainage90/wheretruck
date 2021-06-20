@@ -28,7 +28,7 @@ before_deploy:
   - mkdir -p app_bundle
   - docker save -o wheretruck_app.tar wheretruck_app
   - docker save -o wheretruck_nginx.tar wheretruck_nginx
-  - mv docker-compose.yml appspect.yml wheretruck_app.tar wheretruck_nginx.tar app_bundle/
+  - mv docker-compose.yml appspec.yml wheretruck_app.tar wheretruck_nginx.tar app_bundle/
   - mv scripts/deploy.sh app_bundle/
   - cd app_bundle && zip -r app_bundle *
   - cd ../ && mkdir -p deploy
