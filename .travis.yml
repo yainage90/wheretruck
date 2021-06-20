@@ -11,12 +11,28 @@ cache:
     - '$HOME/.m2/repository'
     - '$HOME/.gradle'
 
-script: "./gradlew clean build -x test"
+env:
+  - DOCKER_COMPOSE_VERSION=1.25.0
+
+before_install:
+  - sudo rm /usr/local/bin/docker-compose
+  - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
+  - chmod +x docker-compose
+  - sudo mv docker-compose /usr/local/bin
+
+script:
+  - ./gradlew clean build -x test
+  - docker-compose build
 
 before_deploy:
-  - zip -r wheretruck *
+  - mkdir -p app_bundle
+  - docker save -o wheretruck_app.tar wheretruck_app
+  - docker save -o wheretruck_nginx.tar wheretruck_nginx
+  - mv docker-compose wheretruck_app.tar wheretruck_nginx.tar app_bundle/
+  - mv scripts/deploy.sh app_bundle/
+  - zip -r app_bundle *
   - mkdir -p deploy
-  - mv wheretruck.zip deploy/wheretruck.zip
+  - mv app_bundle.zip deploy/
 
 deploy:
   - provider: s3
