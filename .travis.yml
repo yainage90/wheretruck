@@ -28,11 +28,11 @@ before_deploy:
   - mkdir -p app_bundle
   - docker save -o wheretruck_app.tar wheretruck_app
   - docker save -o wheretruck_nginx.tar wheretruck_nginx
-  - mv docker-compose.yml wheretruck_app.tar wheretruck_nginx.tar app_bundle/
+  - mv docker-compose.yml appspect.yml wheretruck_app.tar wheretruck_nginx.tar app_bundle/
   - mv scripts/deploy.sh app_bundle/
-  - zip -r app_bundle *
-  - mkdir -p deploy
-  - mv app_bundle.zip deploy/
+  - cd app_bundle && zip -r app_bundle *
+  - cd ../ && mkdir -p deploy
+  - mv app_bundle/app_bundle.zip deploy/app_bundle.zip
 
 deploy:
   - provider: s3
