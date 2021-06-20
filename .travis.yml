@@ -49,7 +49,7 @@ deploy:
     access_key_id: $AWS_ACCESS_KEY
     secret_access_key: $AWS_SECRET_KEY
     bucket: wheretruck-build
-    key: wheretruck.zip
+    key: app_bundle.zip
     bundle_type: zip
     application: wheretruck
     deployment_group: wheretruck-group
