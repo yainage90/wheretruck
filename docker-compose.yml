@@ -1,4 +1,4 @@
-version: "3"
+version: "3.7"
 
 services:
   wheretruck:
@@ -6,11 +6,16 @@ services:
       context: .
     expose:
       - 8080
+    volumes: 
+      - type: bind
+        source: /home/yain/app-config
+        target: /app-config
 
   nginx:
     build:
       context: ./nginx
     ports: 
       - "80:80"
+      - "8080:8080"
     depends_on: 
       - wheretruck
