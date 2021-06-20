@@ -14,25 +14,14 @@ cache:
 env:
   - DOCKER_COMPOSE_VERSION=1.25.0
 
-before_install:
-  - sudo rm /usr/local/bin/docker-compose
-  - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
-  - chmod +x docker-compose
-  - sudo mv docker-compose /usr/local/bin
-
 script:
   - ./gradlew clean build -x test
-  - docker-compose build
 
 before_deploy:
-  - mkdir -p app_bundle
-  - docker save -o wheretruck_app.tar wheretruck_app
-  - docker save -o wheretruck_nginx.tar wheretruck_nginx
-  - cp docker-compose.yml appspec.yml wheretruck_app.tar wheretruck_nginx.tar app_bundle/
-  - cp scripts/deploy.sh app_bundle/
-  - cd app_bundle && zip -r app_bundle *
-  - cd ../ && mkdir -p deploy
-  - mv app_bundle/app_bundle.zip deploy/app_bundle.zip
+  - cp scripts/deploy.sh ./
+  - zip -r wheretruck *
+  - mkdir -p deploy
+  - mv wheretruck.zip deploy/wheretruck.zip
 
 deploy:
   - provider: s3
@@ -49,7 +38,7 @@ deploy:
     access_key_id: $AWS_ACCESS_KEY
     secret_access_key: $AWS_SECRET_KEY
     bucket: wheretruck-build
-    key: app_bundle.zip
+    key: wheretruck.zip
     bundle_type: zip
     application: wheretruck
     deployment_group: wheretruck-group
