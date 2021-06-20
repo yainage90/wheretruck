@@ -18,7 +18,6 @@ script:
   - ./gradlew clean build -x test
 
 before_deploy:
-  - cp scripts/deploy.sh ./
   - zip -r wheretruck *
   - mkdir -p deploy
   - mv wheretruck.zip deploy/wheretruck.zip
