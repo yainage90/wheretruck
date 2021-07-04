@@ -26,6 +26,7 @@ public class JwtAuthenticationFilter implements Filter {
 
 		if(req.getMethod().equals("GET")) {
 			chain.doFilter(req, res);
+			return;
 		}
 
 		final String jwt = req.getHeader("jwt");
