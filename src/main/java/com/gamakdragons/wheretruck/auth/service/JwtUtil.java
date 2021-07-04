@@ -15,13 +15,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gamakdragons.wheretruck.auth.dto.apple.ApplePublicKeyResponse;
+import com.gamakdragons.wheretruck.auth.exception.JwtException;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -49,7 +49,7 @@ public class JwtUtil {
                     .compact();
     }
 
-    public static String validate(String token) {
+    public static String validate(String token) throws JwtException {
 
         String jwt;
         try {
