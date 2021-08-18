@@ -1,4 +1,10 @@
-# 1. 엔드포인트(endoint)
+# 1. 시스템 아키텍처
+
+![system_architecture](./images/system_architecture.jpg)
+
+<br>
+
+# 2. 엔드포인트(endoint)
 
 ### 1) truck(푸드트럭)
 
