@@ -6,6 +6,8 @@
 
 # 2. 엔드포인트(endoint)
 
+Postman으로 작성한 API 명세 => [API 명세](https://documenter.getpostman.com/view/16161796/TzeWGns2)
+
 ### 1) truck(푸드트럭)
 
 #### a. id로 트럭 조회
