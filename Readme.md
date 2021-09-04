@@ -1,10 +1,16 @@
-# 1. 시스템 아키텍처
+# 1. 프로젝트 소개
+
+푸드트럭 소유주에게는 전국 푸드트럭 영업 허가구역 정보를 제공한다. 전국 푸드트럭 허가구역에 관한 데이터는 공공 데이터 포털(https://www.data.go.kr)에서 제공하는 파일 데이터를 가공 제공한다.
+
+또한 소비자를 위해 주변에 있는 푸드트럭에 관한 정보(위치-경도/위도, 음식 메뉴, 현재 운영중 여부)를 제공한다.
+
+# 2. 시스템 아키텍처
 
 ![system_architecture](./images/system_architecture.jpg)
 
 <br>
 
-# 2. 엔드포인트(endoint)
+# 3. 엔드포인트(endoint)
 
 Postman으로 작성한 API 명세 => [API 명세](https://documenter.getpostman.com/view/16161796/TzeWGns2)
 
