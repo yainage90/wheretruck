@@ -27,7 +27,7 @@ GET /api/truck/<트럭id> HTTP/1.1
 
 //headers
 {
-	jwt
+  jwt
 }
 ```
 
@@ -37,7 +37,7 @@ GET /api/truck/geo?lat=<위도>&lon=<경도>&distance=<거리-km>
 
 //headers
 {
-	jwt
+  jwt
 }
 
 ```
@@ -48,7 +48,7 @@ GET /api/truck/my HTTP/1.1
 
 //headers
 {
-	jwt
+  jwt
 }
 ```
 
@@ -58,7 +58,7 @@ GET /api/truck/all HTTP/1.1
 
 //headers
 {
-	jwt
+  jwt
 }
 ```
 
@@ -69,14 +69,14 @@ GET /api/truck/all HTTP/1.1
 
 //headers
 {
-	jwt
+  jwt
 }
 
 //body(formdata)
 {
-	name: string,
-	description: string,
-	image: multipart-file
+  name: string,
+  description: string,
+  image: multipart-file
 }
 ```
 
@@ -86,14 +86,14 @@ PUT /api/truck/ HTTP/1.1
 
 //headers
 {
-	jwt
+  jwt
 }
 
 //body(formdata)
 {
-	name: string,
-	description: string,
-	image: multipart-file
+  name: string,
+  description: string,
+  image: multipart-file
 }
 ```
 
@@ -103,13 +103,13 @@ PUT /api/truck/start/<트럭id> HTTP/1.1
 
 //headers
 {
-	jwt
+  jwt
 }
 
 //body(raw-json)
 {
-	lat: float,
-	lon: float
+  lat: float,
+  lon: float
 }
 ```
 
@@ -119,7 +119,7 @@ PUT /api/truck/stop/<트럭id> HTTP/1.1
 
 //headers
 {
-	jwt
+  jwt
 }
 ```
 
@@ -129,7 +129,7 @@ DELETE /api/truck/<트럭id> HTTP/1.1
 
 //headers
 {
-	jwt
+  jwt
 }
 ```
 
@@ -142,7 +142,7 @@ DELETE /api/truck/<트럭id> HTTP/1.1
 
 //headers
 {
-	jwt
+  jwt
 }
 
 GET /api/region/all HTTP/1.1
@@ -154,7 +154,7 @@ GET /api/region/geo?lat=<위도>&lon=<경도>&distance=<거리-km> HTTP/1.1
 
 //headers
 {
-	jwt
+  jwt
 }
 ```
 
@@ -164,7 +164,7 @@ GET /api/region/address?city=<시도군>&town=<시군구> HTTP/1.1
 
 //headers
 {
-	jwt
+  jwt
 }
 ```
 
@@ -178,15 +178,15 @@ POST /api/food/<트럭id> HTTP/1.1
 
 //headers
 {
-	jwt
+  jwt
 }
 
 //body(formdata)
 {
-	name: string,
-	cost: integer,
-	description: string,
-	image: multipart-file
+  name: string,
+  cost: integer,
+  description: string,
+  image: multipart-file
 }
 ```
 
@@ -196,15 +196,15 @@ PUT /api/food/<트럭id> HTTP/1.1
 
 //headers
 {
-	jwt
+  jwt
 }
 
 //body(formdata)
 {
-	name: string,
-	cost: integer,
-	description: string,
-	image: multipart-file
+  name: string,
+  cost: integer,
+  description: string,
+  image: multipart-file
 }
 ```
 
@@ -219,7 +219,7 @@ PUT /api/food/<트럭id>/sort/<음식 id 배열>
 
 //headers
 {
-	jwt
+  jwt
 }
 ```
 
@@ -233,13 +233,13 @@ POST /api/rating/<트럭id> HTTP/1.1
 
 //headers
 {
-	jwt
+  jwt
 }
 
 //body(raw-json)
 {
-	star: double,
-	comment: string
+  star: double,
+  comment: string
 }
 ```
 #### b. 수정
@@ -248,13 +248,13 @@ PUT /api/rating/<트럭id> HTTP/1.1
 
 //headers
 {
-	jwt
+  jwt
 }
 
 //body(raw-json)
 {
-	star: double,
-	comment: string
+  star: double,
+  comment: string
 }
 ```
 
@@ -264,7 +264,7 @@ DELETE /api/rating/<트럭id>/<리뷰id> HTTP/1.1
 
 //headers
 {
-	jwt
+  jwt
 }
 ```
 
@@ -274,7 +274,7 @@ GET /api/rating/my HTTP/1.1
 
 //headers
 {
-	jwt
+  jwt
 }
 ```
 
@@ -288,9 +288,9 @@ PUT /login/kakao HTTP/1.1
 
 //body(raw-json)
 {
-	authToken: string,
-	nickName: string,
-	role: string(OWNER/USER)
+  authToken: string,
+  nickName: string,
+  role: string(OWNER/USER)
 }
 ```
 
@@ -300,7 +300,7 @@ PUT /logout/kakao HTTP/1.1
 
 //body(raw-json)
 {
-	accessToken: string
+  accessToken: string
 }
 ```
 
@@ -310,9 +310,9 @@ PUT /login/apple HTTP/1.1
 
 //body(raw-json)
 {
-	authToken: string,
-	nickName: string,
-	role: string
+  authToken: string,
+  nickName: string,
+  role: string
 }
 ```
 
@@ -322,7 +322,7 @@ PUT /logout/apple HTTP/1.1
 
 //body(raw-json)
 {
-	accessToken: string
+  accessToken: string
 }
 ```
 
@@ -336,7 +336,7 @@ GET /api/user/me HTTP/1.1
 
 //headers
 {
-	jwt
+  jwt
 }
 ```
 
@@ -346,12 +346,12 @@ PUT /api/user/nickname HTTP/1.1
 
 //headers
 {
-	jwt
+  jwt
 }
 
 //body(raw-json)
 {
-	nickName: string
+  nickName: string
 }
 ```
 
@@ -361,12 +361,12 @@ PUT /api/user/role HTTP/1.1
 
 //headers
 {
-	jwt
+  jwt
 }
 
 //body(raw-json)
 {
-	role: string(OWNER/USER)
+  role: string(OWNER/USER)
 }
 ```
 
@@ -380,12 +380,12 @@ POST /api/favorite HTTP/1.1
 
 //headers
 {
-	jwt
+  jwt
 }
 
 //body(raw-json)
 {
-	truckId: string
+  truckId: string
 }
 ```
 
@@ -395,7 +395,7 @@ GET /api/favorite/my HTTP/1.1
 
 //headers
 {
-	jwt
+  jwt
 }
 ```
 
@@ -405,7 +405,7 @@ GET /api/favorite/truck/<트럭id> HTTP/1.1
 
 //headers
 {
-	jwt
+  jwt
 }
 ```
 
