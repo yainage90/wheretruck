@@ -67,16 +67,16 @@ GET /api/truck/all HTTP/1.1
  ```javascript
  POST /api/truck/ HTTP/1.1
 
- //headers
+//headers
 {
 	jwt
 }
 
 //body(formdata)
 {
-		name: string,
-				  	description: string,
-						image: multipart-file
+	name: string,
+	description: string,
+	image: multipart-file
 }
 ```
 
