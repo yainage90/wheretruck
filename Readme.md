@@ -4,13 +4,18 @@
 
 또한 소비자를 위해 주변에 있는 푸드트럭에 관한 정보(위치-경도/위도, 음식 메뉴, 현재 운영중 여부)를 제공한다.
 
-# 2. 시스템 아키텍처
+# 2. 사용된 기술
+
+- ElasticSearch
+- Java 11 + SpringBoot 2.5.0
+
+# 3. 시스템 아키텍처
 
 ![system_architecture](./images/system_architecture.jpg)
 
 <br>
 
-# 3. 엔드포인트(endoint)
+# 4. 엔드포인트(endoint)
 
 Postman으로 작성한 API 명세 => [API 명세](https://documenter.getpostman.com/view/16161796/TzeWGns2)
 
